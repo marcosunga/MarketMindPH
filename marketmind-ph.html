@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MarketMind PH — Philippine Stock Market Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{--bg:#050a0e;--bg2:#0c141a;--bg3:#111c24;--card:#0d1820;--border:rgba(0,255,180,0.1);--border2:rgba(0,255,180,0.25);--accent:#00ffb4;--accent2:#00c8ff;--accent3:#ff6b35;--accent4:#ffd166;--accent5:#a78bfa;--text:#e8f4f0;--muted:#5a7a7e;--muted2:#8fb0b5;--red:#ff4455;--green:#00ffb4;--mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 50% -5%,rgba(0,255,180,0.05) 0%,transparent 65%);pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);pointer-events:none;z-index:1}
+.app{position:relative;z-index:2;display:grid;grid-template-columns:240px 1fr;grid-template-rows:66px 1fr;height:100vh;overflow:hidden}
+.topbar{grid-column:1/-1;display:flex;align-items:center;padding:0 22px;gap:18px;border-bottom:1px solid var(--border);background:rgba(5,10,14,0.96);backdrop-filter:blur(12px);position:sticky;top:0;z-index:200}
+.logo{font-family:var(--mono);font-weight:700;font-size:17px;color:var(--accent);display:flex;align-items:center;gap:10px;flex-shrink:0;letter-spacing:-0.5px}
+.logo-mark{display:flex;align-items:center;justify-content:center;gap:0;flex-shrink:0}
+.logo-hex-outer{width:36px;height:36px;border:2px solid var(--accent);background:rgba(0,255,180,0.07);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;position:relative}
+.logo-hex-inner{width:14px;height:14px;background:var(--accent);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)}
+.logo-text{display:flex;flex-direction:column;gap:1px}
+.logo-name{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--accent);line-height:1;letter-spacing:-0.5px}
+.logo-tagline{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+.search-wrap{flex:1;max-width:400px;margin:0 auto;position:relative}
+.search-box{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:8px 14px;font-family:var(--sans);font-size:13px;color:var(--text);outline:none;transition:border-color .15s}
+.search-box:focus{border-color:rgba(0,255,180,0.35)}
+.search-box::placeholder{color:var(--muted)}
+.search-drop{position:absolute;top:40px;left:0;right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:4px;z-index:999;display:none;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+.s-item{display:flex;align-items:center;gap:12px;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s}
+.s-item:last-child{border-bottom:none}
+.s-item:hover{background:rgba(0,255,180,0.04)}
+.s-sym{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent);width:50px}
+.s-name{font-size:12px;color:var(--muted2);flex:1}
+.s-chg{font-family:var(--mono);font-size:11px}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.psei-badge{font-family:var(--mono);font-size:13px;color:var(--accent4)}
+.live-pill{font-family:var(--mono);font-size:10px;letter-spacing:.8px;padding:5px 12px;border-radius:3px;display:flex;align-items:center;gap:6px;color:var(--accent);background:rgba(0,255,180,0.07);border:1px solid rgba(0,255,180,0.18)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.sidebar{border-right:1px solid var(--border);background:var(--card);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-nav{padding:12px 0;flex:1;overflow-y:auto}
+.nsec{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--muted);padding:12px 18px 5px;text-transform:uppercase}
+.ni{display:flex;align-items:center;gap:10px;padding:10px 18px;cursor:pointer;font-size:13px;color:var(--muted2);transition:all .15s;border-left:2px solid transparent;user-select:none}
+.ni:hover{color:var(--text);background:rgba(0,255,180,0.03)}
+.ni.active{color:var(--accent);background:rgba(0,255,180,0.05);border-left-color:var(--accent)}
+.ni-d{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.5;flex-shrink:0}
+.sb-foot{padding:14px 18px;border-top:1px solid var(--border);font-family:var(--mono);font-size:9px;color:var(--muted);line-height:2.1}
+.sb-foot span{color:var(--accent)}
+.main{overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;background:var(--bg)}
+.tick-strip{overflow:hidden;border-bottom:1px solid var(--border);background:var(--card);flex-shrink:0}
+.tick-inner{display:flex;white-space:nowrap;animation:scroll-t 38s linear infinite}
+.tick-inner:hover{animation-play-state:paused}
+@keyframes scroll-t{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ti{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-right:1px solid var(--border);font-family:var(--mono);font-size:11px;cursor:pointer;transition:background .15s;white-space:nowrap}
+.ti:hover{background:rgba(0,255,180,0.04)}
+.ti-s{font-weight:700;color:var(--text)}
+.ti-p{color:var(--muted2)}
+.up{color:var(--green)}.dn{color:var(--red)}
+.page{display:none;flex-direction:column;gap:16px;padding:22px;flex:1}
+.page.active{display:flex}
+.sh{display:flex;align-items:center;gap:10px;margin-bottom:2px}
+.sh-t{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;white-space:nowrap}
+.sh-l{flex:1;height:1px;background:var(--border)}
+.sh-b{font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:1px;background:rgba(0,255,180,0.07);color:var(--accent);border:1px solid rgba(0,255,180,0.14)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:5px}
+.cp{padding:16px}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.ct{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--muted2);text-transform:uppercase}
+.bg{display:flex;gap:4px}
+.tb{font-family:var(--mono);font-size:10px;padding:4px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;border-radius:3px;transition:all .15s;letter-spacing:.5px}
+.tb:hover,.tb.active{border-color:var(--accent);color:var(--accent);background:rgba(0,255,180,0.05)}
+.kpi-g{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:5px;padding:16px;position:relative;overflow:visible;cursor:pointer;transition:border-color .2s}
+.kpi:hover{border-color:var(--border2)}
+.kpi-acc{position:absolute;top:0;left:0;right:0;height:2px;border-radius:5px 5px 0 0}
+.kpi-l{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+.kpi-v{font-family:var(--mono);font-size:26px;font-weight:700;line-height:1;margin-bottom:6px}
+.kpi-s{font-size:12px;color:var(--muted)}
+.cw{position:relative;width:100%}
+.hm-g{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.hm-c{border-radius:4px;padding:11px 6px;text-align:center;cursor:pointer;transition:all .15s;border:1px solid transparent}
+.hm-c:hover{border-color:rgba(255,255,255,0.2);transform:scale(1.04)}
+.hm-sy{font-family:var(--mono);font-size:11px;font-weight:700;margin-bottom:3px}
+.hm-ch{font-family:var(--mono);font-size:10px}
+.hm-vo{font-size:10px;margin-top:3px;opacity:.6}
+.itabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px}
+.itab{font-family:var(--mono);font-size:10px;letter-spacing:.5px;padding:6px 14px;border:1px solid var(--border);background:transparent;color:var(--muted2);cursor:pointer;border-radius:3px;transition:all .15s;white-space:nowrap}
+.itab:hover{border-color:var(--border2);color:var(--text)}
+.itab.active{background:rgba(0,255,180,0.07);border-color:rgba(0,255,180,0.32);color:var(--accent)}
+.ind-detail{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ind-stats{display:flex;flex-direction:column;gap:7px}
+.is{background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
+.is-l{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
+.is-v{font-family:var(--mono);font-size:14px;font-weight:700}
+.drv-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.drv-item:last-child{border-bottom:none}
+.drv-name{font-size:12px;color:var(--muted2);flex:1}
+.drv-bw{width:90px;height:6px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden}
+.drv-b{height:6px;border-radius:2px;transition:width .8s ease}
+.drv-v{font-family:var(--mono);font-size:10px;width:34px;text-align:right}
+.ms-item{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.ms-yr{font-family:var(--mono);font-size:10px;white-space:nowrap;min-width:72px;padding-top:1px}
+.ms-ev{font-size:12px;color:var(--muted2);line-height:1.55}
+.risk-row{margin-bottom:10px}
+.risk-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.risk-name{font-size:12px;color:var(--muted2)}
+.risk-bars{font-family:var(--mono);font-size:11px;letter-spacing:-1px}
+.scr-f{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.fsel{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:7px 12px;font-family:var(--sans);font-size:13px;color:var(--muted2);cursor:pointer;outline:none;transition:border-color .15s}
+.fsel:focus,.fsel:hover{border-color:var(--border2)}
+.scr-t{width:100%;border-collapse:collapse;min-width:700px}
+.scr-t th{font-family:var(--mono);font-size:10px;letter-spacing:.8px;color:var(--muted2);text-align:left;padding:10px 12px;border-bottom:2px solid var(--border);text-transform:uppercase;cursor:pointer;user-select:none;white-space:nowrap;background:var(--bg2)}
+.scr-t th:hover{color:var(--accent)}
+.scr-t th::after{content:' ↕';opacity:.3;font-size:9px}
+.scr-t th:first-child::after,.scr-t th:nth-child(2)::after,.scr-t th:nth-child(9)::after,.scr-t th:nth-child(10)::after{content:''}
+.scr-t td{font-size:13px;padding:11px 12px;border-bottom:1px solid rgba(0,255,180,0.04);vertical-align:middle;white-space:nowrap}
+.scr-t td:first-child{font-family:var(--mono);font-size:12px}
+.scr-t td:nth-child(4),.scr-t td:nth-child(5),.scr-t td:nth-child(6),.scr-t td:nth-child(7),.scr-t td:nth-child(8){font-family:var(--mono);font-size:12px}
+.scr-t tr:hover td{background:rgba(0,255,180,0.025)}
+.scr-t tr{cursor:pointer;transition:background .1s}
+.tag{font-size:10px;padding:3px 8px;border-radius:2px;display:inline-block;letter-spacing:.5px;font-family:var(--mono)}
+.tag-r{background:rgba(0,255,180,0.09);color:var(--green);border:1px solid rgba(0,255,180,0.2)}
+.tag-n{background:rgba(255,255,255,0.04);color:var(--muted2);border:1px solid var(--border)}
+.tag-f{background:rgba(255,68,85,0.09);color:var(--red);border:1px solid rgba(255,68,85,0.2)}
+.comp-c{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.cc{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;cursor:pointer;padding:5px 10px;border:1px solid var(--border);border-radius:3px;transition:all .15s;user-select:none}
+.cc.on{border-color:var(--border2)}
+.cs{width:8px;height:8px;border-radius:1px;flex-shrink:0}
+.chat-panel{display:flex;flex-direction:column;height:calc(100vh - 66px - 44px)}
+.chat-hdr{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.chat-tag{font-family:var(--mono);font-size:9px;padding:3px 9px;border-radius:2px;background:rgba(0,200,255,0.07);color:var(--accent2);border:1px solid rgba(0,200,255,0.16);letter-spacing:1px}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:88%}
+.msg.sys{align-self:flex-start}
+.msg.usr{align-self:flex-end}
+.msg-b{padding:11px 15px;border-radius:4px;font-size:13px;line-height:1.7}
+.msg.sys .msg-b{background:var(--bg2);border:1px solid var(--border);color:var(--muted2)}
+.msg.usr .msg-b{background:rgba(0,255,180,0.06);border:1px solid rgba(0,255,180,0.16);color:var(--text)}
+.msg-meta{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:.5px}
+.msg.usr .msg-meta{text-align:right}
+.think{display:flex;gap:4px;align-items:center;padding:11px 15px}
+.td{width:6px;height:6px;border-radius:50%;background:var(--accent2);opacity:.3;animation:think 1.1s infinite}
+.td:nth-child(2){animation-delay:.18s}
+.td:nth-child(3){animation-delay:.36s}
+@keyframes think{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+.chat-inp-r{padding:13px 18px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
+.chat-inp{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:9px 14px;font-family:var(--sans);font-size:13px;color:var(--text);outline:none;transition:border-color .15s}
+.chat-inp:focus{border-color:rgba(0,255,180,0.32)}
+.chat-inp::placeholder{color:var(--muted)}
+.chat-send{font-family:var(--mono);font-size:10px;padding:0 16px;background:rgba(0,255,180,0.09);border:1px solid rgba(0,255,180,0.22);color:var(--accent);border-radius:4px;cursor:pointer;transition:all .15s;letter-spacing:.5px}
+.chat-send:hover{background:rgba(0,255,180,0.15)}
+.qps{padding:10px 18px 0;display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0}
+.qp{font-family:var(--mono);font-size:10px;padding:5px 10px;border:1px solid var(--border);color:var(--muted2);border-radius:3px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.qp:hover{border-color:var(--border2);color:var(--text)}
+.ov-panel{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+.ov-panel.open{display:flex}
+.ov-box{background:var(--bg2);border:1px solid var(--border2);border-radius:7px;width:100%;max-width:700px;max-height:90vh;overflow-y:auto;padding:24px;position:relative}
+.ov-close{position:absolute;top:14px;right:16px;font-family:var(--mono);font-size:11px;color:var(--muted);cursor:pointer;padding:4px 10px;border:1px solid var(--border);border-radius:3px;background:transparent;transition:all .15s}
+.ov-close:hover{border-color:var(--red);color:var(--red)}
+.prog-t{height:3px;background:rgba(255,255,255,0.05);border-radius:1px;overflow:hidden;margin-top:5px}
+.prog-f{height:3px;border-radius:1px;transition:width 1.2s ease}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,255,180,0.2);border-radius:2px}
+.info-box{background:rgba(0,200,255,0.04);border:1px solid rgba(0,200,255,0.14);border-radius:4px;padding:13px 16px;display:flex;gap:12px;align-items:flex-start}
+.info-box.warn{background:rgba(255,209,102,0.04);border-color:rgba(255,209,102,0.14)}
+.info-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.info-text{font-size:12px;color:var(--muted2);line-height:1.7}
+.info-text strong{color:var(--text);font-weight:500}
+.page-ctx{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:4px;padding:12px 16px;display:flex;align-items:flex-start;gap:12px}
+.ctx-label{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--accent);white-space:nowrap;margin-top:1px;min-width:64px;text-transform:uppercase}
+.ctx-text{font-size:12px;color:var(--muted2);line-height:1.65}
+.glos-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.glos-item{background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:12px 14px}
+.glos-term{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.5px;margin-bottom:5px;text-transform:uppercase}
+.glos-def{font-size:12px;color:var(--muted2);line-height:1.65}
+@media(max-width:900px){.app{grid-template-columns:1fr}.sidebar{display:none}.kpi-g{grid-template-columns:repeat(2,1fr)}.hm-g{grid-template-columns:repeat(3,1fr)}.ind-detail{grid-template-columns:1fr}}
+@media(max-width:600px){.kpi-g{grid-template-columns:repeat(2,1fr)}.search-wrap{display:none}.hm-g{grid-template-columns:repeat(2,1fr)}}
+
+/* ── HERO BANNER ── */
+.hero{background:linear-gradient(135deg,rgba(0,255,180,0.04) 0%,rgba(0,200,255,0.03) 50%,transparent 100%);border:1px solid var(--border);border-radius:6px;padding:20px 24px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(0,255,180,0.06) 0%,transparent 70%);pointer-events:none}
+.hero-title{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent);margin-bottom:6px;letter-spacing:-0.5px}
+.hero-sub{font-size:13px;color:var(--muted2);line-height:1.7;max-width:680px;margin-bottom:16px}
+.hero-features{display:flex;gap:8px;flex-wrap:wrap}
+.hf{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9px;color:var(--muted2);background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:2px;padding:5px 10px;cursor:pointer;transition:all .15s;letter-spacing:.3px}
+.hf:hover{border-color:var(--border2);color:var(--text);background:rgba(0,255,180,0.04)}
+.hf-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.hero-dismiss{position:absolute;top:12px;right:14px;font-family:var(--mono);font-size:9px;color:var(--muted);cursor:pointer;padding:3px 8px;border:1px solid var(--border);border-radius:2px;transition:all .15s}
+.hero-dismiss:hover{color:var(--text);border-color:var(--border2)}
+
+/* ── INFO BOX ── */
+/* defined above in main block */
+
+/* ── GLOSSARY PANEL ── */
+/* defined above in main block */
+
+/* ── MOBILE NAV BAR ── */
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(13,24,32,0.97);border-top:1px solid var(--border);padding:6px 0;z-index:300;backdrop-filter:blur(12px)}
+.mob-nav-items{display:flex;justify-content:space-around}
+.mob-ni{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 10px;cursor:pointer;font-family:var(--mono);font-size:8px;color:var(--muted);transition:color .15s;letter-spacing:.5px}
+.mob-ni.active{color:var(--accent)}
+.mob-ni-icon{font-size:18px;line-height:1}
+@media(max-width:900px){.mob-nav{display:block}.main{padding-bottom:64px}}
+.kpi-info{position:absolute;top:10px;right:10px;width:16px;height:16px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;color:var(--muted);cursor:pointer;transition:all .15s;z-index:10}
+.kpi-info:hover{border-color:var(--accent);color:var(--accent)}
+.kpi-tooltip{display:none;position:absolute;bottom:calc(100% + 8px);right:0;width:230px;background:var(--bg2);border:1px solid var(--border2);border-radius:4px;padding:12px 14px;z-index:300;box-shadow:0 8px 24px rgba(0,0,0,0.6)}
+.kpi-tooltip.left{right:auto;left:0}
+.kpi-info:hover .kpi-tooltip{display:block}
+.kpi-tooltip-title{font-family:var(--mono);font-size:10px;color:var(--accent);margin-bottom:6px;letter-spacing:.5px}
+.kpi-tooltip-body{font-size:12px;color:var(--muted2);line-height:1.65}
+.gl{border-bottom:1px dashed var(--muted);cursor:help;position:relative;display:inline-block}
+.gl:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--border2);border-radius:3px;padding:7px 11px;font-size:11px;color:var(--text);z-index:400;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,0.5);font-family:var(--sans);font-style:normal;max-width:260px;white-space:normal;text-align:left}
+.sec-drop-wrap{padding:6px 14px 10px}
+.sec-drop{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:7px 10px;font-family:var(--sans);font-size:12px;color:var(--muted2);cursor:pointer;outline:none;transition:border-color .15s}
+.sec-drop:focus,.sec-drop:hover{border-color:var(--border2)}
+.sec-drop option{background:var(--bg2)}
+.sec-choice{background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:16px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;gap:6px}
+.sec-choice:hover{border-color:var(--border2);background:rgba(0,255,180,0.03);transform:translateY(-2px)}
+.sec-choice-highlight{border-color:rgba(255,107,53,0.22);background:rgba(255,107,53,0.03)}
+.sec-choice-highlight:hover{border-color:rgba(255,107,53,0.42)}
+.sc-icon{font-size:22px;color:var(--accent);line-height:1;margin-bottom:2px}
+.sc-label{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text);letter-spacing:.3px}
+.sc-desc{font-size:12px;color:var(--muted2);line-height:1.55}
+.sl-item{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--muted2)}
+.sl-swatch{width:10px;height:10px;border-radius:1px;flex-shrink:0}
+@media(max-width:700px){#sec-chooser{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-mark">
+      <div class="logo-hex-outer"><div class="logo-hex-inner"></div></div>
+    </div>
+    <div class="logo-text">
+      <div class="logo-name">MarketMind<span style="color:var(--muted)">.</span>PH</div>
+      <div class="logo-tagline">PSE Intelligence</div>
+    </div>
+  </div>
+  <div class="search-wrap">
+    <input class="search-box" id="sBox" placeholder="Search stocks — SM, BPI, JFC…" oninput="doSearch(this.value)" onblur="setTimeout(()=>{document.getElementById('sDrop').style.display='none'},180)">
+    <div class="search-drop" id="sDrop"></div>
+  </div>
+  <div class="topbar-right">
+    <span class="psei-badge">PSEi 6,841 <span class="up">▲+1.34%</span></span>
+    <div class="live-pill"><div class="dot"></div>HISTORICAL DATA</div>
+  </div>
+</header>
+
+<nav class="sidebar">
+  <div class="sidebar-nav">
+    <div class="nsec">Market</div>
+    <div class="ni active" onclick="go('overview',this)"><div class="ni-d"></div>Overview</div>
+    <div class="ni" onclick="go('heatmap',this)"><div class="ni-d"></div>Market Heatmap</div>
+    <div class="ni" onclick="go('screener',this)"><div class="ni-d"></div>Stock Screener</div>
+    <div class="nsec">Industries</div>
+    <div class="sec-drop-wrap">
+      <select class="sec-drop" id="sideSecDrop" onchange="sideSecFilter(this.value)">
+        <option value="">All Industries</option>
+        <option value="Banking">Banking</option>
+        <option value="Holdings">Holdings</option>
+        <option value="Property">Property</option>
+        <option value="Industrial">Industrial</option>
+        <option value="Services">Services</option>
+        <option value="Mining &amp; Oil">Mining &amp; Oil</option>
+      </select>
+    </div>
+    <div class="ni" onclick="go('rising',this)"><div class="ni-d"></div>Rising Industries</div>
+    <div class="ni" onclick="go('compare',this)"><div class="ni-d"></div>Sector Comparison</div>
+    <div class="nsec">Intelligence</div>
+    <div class="ni" onclick="go('analyst',this)"><div class="ni-d"></div>Ask the Analyst</div>
+  </div>
+  <div class="sb-foot">
+    <div>DATA: <span>PSE Historical</span></div>
+    <div>PERIOD: <span>2020 – 2026</span></div>
+    <div>COMPONENTS: <span>30 Stocks</span></div>
+    <div>UPDATED: <span>Mar 21, 2026</span></div>
+  </div>
+</nav>
+
+<div class="main">
+<div class="tick-strip"><div class="tick-inner" id="ticker"></div></div>
+
+<!-- OVERVIEW -->
+<div class="page active" id="page-overview">
+  <!-- PERMANENT INTRO + SECTION CHOOSER -->
+  <div class="hero" style="border-radius:6px">
+    <div class="hero-title">MarketMind PH</div>
+    <div class="hero-sub">A free public intelligence dashboard for the <strong style="color:var(--text)">Philippine Stock Exchange (PSE)</strong>. Explore 6 years of historical data — track rising industries, screen all 30 PSEi stocks, compare sectors over time, and ask our AI analyst anything about PH market trends.</div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:1.5px;margin-bottom:10px;margin-top:4px">CHOOSE A SECTION TO EXPLORE ↓</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px" id="sec-chooser">
+      <div class="sec-choice" onclick="go('overview',document.querySelector('[onclick*=overview]'))" data-sec="overview">
+        <div class="sc-icon">⊞</div>
+        <div class="sc-label">Market Overview</div>
+        <div class="sc-desc">PSEi index, sector weights, top gainers &amp; losers, key terms glossary</div>
+      </div>
+      <div class="sec-choice" onclick="go('heatmap',document.querySelector('[onclick*=heatmap]'))" data-sec="heatmap">
+        <div class="sc-icon">◫</div>
+        <div class="sc-label">Market Heatmap</div>
+        <div class="sc-desc">All 30 stocks color-coded by return — spot rising and falling names instantly</div>
+      </div>
+      <div class="sec-choice" onclick="go('screener',document.querySelector('[onclick*=screener]'))" data-sec="screener">
+        <div class="sc-icon">≡</div>
+        <div class="sc-label">Stock Screener</div>
+        <div class="sc-desc">Filter &amp; sort every PSEi component by sector, signal, P/E, volume, and more</div>
+      </div>
+      <div class="sec-choice sec-choice-highlight" onclick="go('rising',document.querySelector('[onclick*=rising]'))" data-sec="rising">
+        <div class="sc-icon" style="color:var(--accent3)">↑</div>
+        <div class="sc-label" style="color:var(--accent3)">Rising Industries</div>
+        <div class="sc-desc">Deep dive into which sectors are growing and the macro drivers behind each</div>
+      </div>
+      <div class="sec-choice" onclick="go('compare',document.querySelector('[onclick*=compare]'))" data-sec="compare">
+        <div class="sc-icon">⇄</div>
+        <div class="sc-label">Sector Comparison</div>
+        <div class="sc-desc">Compare all 6 sectors on a normalized chart over 1, 3, or 5 years</div>
+      </div>
+      <div class="sec-choice" onclick="go('analyst',document.querySelector('[onclick*=analyst]'))" data-sec="analyst">
+        <div class="sc-icon" style="color:var(--accent2)">◉</div>
+        <div class="sc-label" style="color:var(--accent2)">Ask the Analyst</div>
+        <div class="sc-desc">AI-powered Q&amp;A on PSE history — ask why sectors moved, compare stocks, and more</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sh"><span class="sh-t">Philippine Stock Exchange — Overview</span><div class="sh-l"></div><span class="sh-b">2020–2026</span></div>
+
+  <!-- KPI CARDS with tooltips -->
+  <div class="kpi-g">
+    <div class="kpi" onclick="go('rising',document.querySelector('[onclick*=rising]'))">
+      <div class="kpi-acc" style="background:var(--accent)"></div>
+      <div class="kpi-info">?
+        <div class="kpi-tooltip">
+          <div class="kpi-tooltip-title">PSEi Level</div>
+          <div class="kpi-tooltip-body">The <strong>Philippine Stock Exchange Index</strong> — a composite index of the 30 largest and most actively traded companies on the PSE. It acts as the primary barometer of the Philippine stock market's overall health. A rising PSEi generally signals investor confidence in the Philippine economy.</div>
+        </div>
+      </div>
+      <div class="kpi-l">PSEi Level</div>
+      <div class="kpi-v" style="color:var(--accent)">6,841</div>
+      <div class="kpi-s"><span class="up">▲ +1.34%</span> Mar 21, 2026</div>
+    </div>
+    <div class="kpi" onclick="go('rising',document.querySelector('[onclick*=rising]'))">
+      <div class="kpi-acc" style="background:var(--accent2)"></div>
+      <div class="kpi-info">?
+        <div class="kpi-tooltip">
+          <div class="kpi-tooltip-title">Top Rising Sector</div>
+          <div class="kpi-tooltip-body">The PSE groups all listed companies into <strong>6 sectors</strong>: Banking, Holdings, Property, Industrial, Services, and Mining & Oil. This shows which sector has gained the most value year-to-date. Banking leads in 2026 driven by BSP rate normalization and record bank earnings.</div>
+        </div>
+      </div>
+      <div class="kpi-l">Top Rising Sector</div>
+      <div class="kpi-v" style="color:var(--accent2)">Banking</div>
+      <div class="kpi-s"><span class="up">▲ +18.4%</span> YTD 2026</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-acc" style="background:var(--accent4)"></div>
+      <div class="kpi-info">?
+        <div class="kpi-tooltip left">
+          <div class="kpi-tooltip-title">52-Week High</div>
+          <div class="kpi-tooltip-body">The <strong>highest closing value</strong> the PSEi reached in the past 52 weeks (one year). When the index trades near its 52-week high, it often signals strong market momentum. The PSEi hit 7,108 in August 2025 before pulling back.</div>
+        </div>
+      </div>
+      <div class="kpi-l">52-Week High</div>
+      <div class="kpi-v" style="color:var(--accent4)">7,108</div>
+      <div class="kpi-s">Aug 2025</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-acc" style="background:var(--accent3)"></div>
+      <div class="kpi-info">?
+        <div class="kpi-tooltip left">
+          <div class="kpi-tooltip-title">52-Week Low</div>
+          <div class="kpi-tooltip-body">The <strong>lowest closing value</strong> the PSEi reached in the past 52 weeks. A large gap between the 52-week low and high (like 6,012 to 7,108) indicates high volatility. The October 2024 low was driven by foreign fund outflows and a stronger USD.</div>
+        </div>
+      </div>
+      <div class="kpi-l">52-Week Low</div>
+      <div class="kpi-v" style="color:var(--accent3)">6,012</div>
+      <div class="kpi-s">Oct 2024</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:3fr 2fr;gap:12px">
+    <div class="card cp">
+      <div class="ch"><span class="ct">PSEi Historical Performance</span>
+        <div class="bg"><button class="tb active" onclick="setPSEI(this,'1Y')">1Y</button><button class="tb" onclick="setPSEI(this,'3Y')">3Y</button><button class="tb" onclick="setPSEI(this,'5Y')">5Y</button></div>
+      </div>
+      <div class="cw" style="height:210px"><canvas id="pseiChart"></canvas></div>
+    </div>
+    <div class="card cp">
+      <div class="ch"><span class="ct">Sector Weights</span></div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Each slice shows that sector's share of total PSEi market capitalization. Banking and Holdings dominate, reflecting the conglomerate-heavy structure of the Philippine economy.</div>
+      <div class="cw" style="height:185px"><canvas id="secPie"></canvas></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+    <div class="card cp">
+      <div class="ch"><span class="ct">Top Gainers — YTD</span></div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Stocks with the highest year-to-date price return. Click any row to view details.</div>
+      <div id="g-gainers"></div>
+    </div>
+    <div class="card cp">
+      <div class="ch"><span class="ct">Top Losers — YTD</span></div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Stocks with the steepest price decline year-to-date. Useful for spotting sectors under pressure.</div>
+      <div id="g-losers"></div>
+    </div>
+    <div class="card cp">
+      <div class="ch"><span class="ct">Most Active — Volume</span></div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Stocks with the highest average daily trading volume. High volume often confirms price moves.</div>
+      <div id="g-active"></div>
+    </div>
+  </div>
+
+  <!-- GLOSSARY -->
+  <div class="card cp">
+    <div class="ch"><span class="ct">Key Terms Glossary</span><span style="font-size:10px;color:var(--muted)">Hover any highlighted term above for a quick definition</span></div>
+    <div class="glos-grid">
+      <div class="glos-item"><div class="glos-term">YTD (Year-to-Date)</div><div class="glos-def">Performance measured from January 1st of the current year to today. "BDO +22.3% YTD" means BDO's stock price has risen 22.3% since the start of 2026.</div></div>
+      <div class="glos-item"><div class="glos-term">P/E Ratio (Price-to-Earnings)</div><div class="glos-def">How many pesos investors pay for every ₱1 of a company's annual earnings. A P/E of 10x means the stock costs 10× its yearly profit. Lower P/E can suggest undervaluation.</div></div>
+      <div class="glos-item"><div class="glos-term">Market Capitalization</div><div class="glos-def">Total market value of a company — its share price multiplied by the total number of shares. Large Cap companies on the PSE are generally above ₱100 billion in market cap.</div></div>
+      <div class="glos-item"><div class="glos-term">Dividend Yield</div><div class="glos-def">Annual cash dividends paid per share, divided by the share price. A yield of 4% means you receive ₱4 in dividends for every ₱100 invested. Higher yields attract income investors.</div></div>
+      <div class="glos-item"><div class="glos-term">Beta</div><div class="glos-def">Measures a stock or sector's sensitivity to PSEi movements. Beta of 1.0 = moves with the index. Beta above 1.0 = more volatile than the market. Beta below 1.0 = more stable.</div></div>
+      <div class="glos-item"><div class="glos-term">Volume (Trading Volume)</div><div class="glos-def">Number of shares traded in a given period. High volume on an up day confirms buying interest. High volume on a down day confirms selling pressure. Low volume moves are less reliable.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- HEATMAP -->
+<div class="page" id="page-heatmap">
+  <div class="sh"><span class="sh-t">Market Heatmap</span><div class="sh-l"></div><span class="sh-b">CLICK ANY CELL FOR DETAILS</span></div>
+  <div class="page-ctx">
+    <span class="ctx-label">WHAT IS THIS</span>
+    <span class="ctx-text">The <strong>Market Heatmap</strong> shows all 30 PSEi-listed stocks as colored tiles. <strong>Green tiles</strong> indicate positive returns (the darker the green, the stronger the gain). <strong>Red tiles</strong> indicate losses. Switch between YTD, 1-month, 3-month, and 1-year views. Click any tile to open a detailed stock price history panel.</span>
+  </div>
+  <div class="card cp">
+    <div class="ch"><span class="ct">PSEi Components — Color by Return</span>
+      <div class="bg"><button class="tb active" onclick="setHM(this,'ytd')">YTD</button><button class="tb" onclick="setHM(this,'1m')">1M</button><button class="tb" onclick="setHM(this,'3m')">3M</button><button class="tb" onclick="setHM(this,'1y')">1Y</button></div>
+    </div>
+    <!-- FIXED LEGEND — fully labeled, no undefined -->
+    <div style="display:flex;align-items:center;gap:20px;margin-bottom:12px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">Strong Loss</span>
+        <div style="display:flex;gap:2px;align-items:center">
+          <span style="width:14px;height:14px;background:rgba(255,68,85,0.85);border-radius:2px;display:inline-block"></span>
+          <span style="width:14px;height:14px;background:rgba(255,68,85,0.6);border-radius:2px;display:inline-block"></span>
+          <span style="width:14px;height:14px;background:rgba(255,68,85,0.35);border-radius:2px;display:inline-block"></span>
+          <span style="width:14px;height:14px;background:rgba(255,255,255,0.07);border-radius:2px;display:inline-block;border:1px solid rgba(255,255,255,0.1)"></span>
+          <span style="width:14px;height:14px;background:rgba(0,255,180,0.35);border-radius:2px;display:inline-block"></span>
+          <span style="width:14px;height:14px;background:rgba(0,255,180,0.6);border-radius:2px;display:inline-block"></span>
+          <span style="width:14px;height:14px;background:rgba(0,255,180,0.85);border-radius:2px;display:inline-block"></span>
+        </div>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">Strong Gain</span>
+      </div>
+      <div style="display:flex;gap:14px">
+        <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted2)"><span style="width:10px;height:10px;background:rgba(255,68,85,0.6);border-radius:1px;display:inline-block"></span>Falling (negative return)</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted2)"><span style="width:10px;height:10px;background:rgba(0,255,180,0.6);border-radius:1px;display:inline-block"></span>Rising (positive return)</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">Darker = stronger move · Click any tile for details</span>
+      </div>
+    </div>
+    <div class="hm-g" id="hm-grid"></div>
+  </div>
+  <div class="card cp">
+    <div class="ch"><span class="ct">Sector YTD Performance</span></div>
+    <div class="cw" style="height:190px"><canvas id="secBar"></canvas></div>
+  </div>
+</div>
+
+<!-- SCREENER -->
+<div class="page" id="page-screener">
+  <div class="sh"><span class="sh-t">Stock Screener</span><div class="sh-l"></div><span class="sh-b">30 PSEi COMPONENTS</span></div>
+  <div class="page-ctx">
+    <span class="ctx-label">HOW TO USE</span>
+    <span class="ctx-text">Filter stocks by <strong>Sector</strong>, <strong>Signal</strong> (Rising/Neutral/Falling), <strong>Market Cap</strong> size, and sort by any column. Click any column header to sort. Click any row to open a detailed stock view with price history. The <strong>6M Trend</strong> sparkline shows the direction of recent price movement at a glance.</span>
+  </div>
+  <div class="info-box warn">
+    <span class="info-icon" style="color:var(--accent4)">ℹ</span>
+    <span class="info-text"><strong>Column Guide:</strong> &nbsp;<span class="gl" data-tip="Year-to-Date % return since Jan 1, 2026">YTD%</span> — return since Jan 1, 2026 &nbsp;·&nbsp; <span class="gl" data-tip="1-Month % price change">1M%</span> — last 30-day return &nbsp;·&nbsp; <span class="gl" data-tip="Price-to-Earnings ratio: share price ÷ annual earnings per share. Lower = potentially cheaper.">P/E</span> — valuation ratio &nbsp;·&nbsp; <span class="gl" data-tip="Average daily shares traded. Higher volume = more liquid, easier to buy/sell.">Vol</span> — average daily trading volume &nbsp;·&nbsp; <strong>Signal</strong> — trend based on moving average crossover analysis</span>
+  </div>
+  <div class="card cp">
+    <div class="scr-f">
+      <select class="fsel" id="f-sec" onchange="applyF()"><option value="">All Sectors</option><option>Banking</option><option>Holdings</option><option>Property</option><option>Industrial</option><option>Services</option><option>Mining &amp; Oil</option></select>
+      <select class="fsel" id="f-sig" onchange="applyF()"><option value="">All Signals</option><option value="RISING">Rising</option><option value="NEUTRAL">Neutral</option><option value="FALLING">Falling</option></select>
+      <select class="fsel" id="f-srt" onchange="applyF()"><option value="ytd">Sort: YTD%</option><option value="price">Sort: Price</option><option value="vol">Sort: Volume</option><option value="pe">Sort: P/E</option></select>
+      <select class="fsel" id="f-cap" onchange="applyF()"><option value="">All Cap Sizes</option><option value="large">Large Cap (&gt;₱100B)</option><option value="mid">Mid Cap (₱10B–100B)</option></select>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="scr-t">
+        <thead><tr>
+          <th onclick="srt('sym')">SYM</th><th>Company</th><th onclick="srt('sector')">Sector</th>
+          <th onclick="srt('price')">Price</th><th onclick="srt('ytd')">YTD%</th>
+          <th onclick="srt('m1')">1M%</th><th onclick="srt('pe')">P/E</th>
+          <th onclick="srt('vol')">Vol</th><th>Signal</th><th>6M Trend</th>
+        </tr></thead>
+        <tbody id="scr-body"></tbody>
+      </table>
+    </div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:8px" id="scr-count"></div>
+  </div>
+</div>
+
+<!-- RISING INDUSTRIES -->
+<div class="page" id="page-rising">
+  <div class="sh"><span class="sh-t">Rising Industries</span><div class="sh-l"></div><span class="sh-b">HISTORICAL ANALYSIS 2022–2026</span></div>
+  <div class="page-ctx">
+    <span class="ctx-label">ABOUT</span>
+    <span class="ctx-text">Annual return history of all 6 PSE sectors on one chart. Toggle sectors on or off using the buttons below the chart. Use the date range selector to zoom into any period. Then pick any single industry for a full breakdown of its drivers, milestones, and risk profile.</span>
+  </div>
+
+  <!-- SINGLE MASTER CHART -->
+  <div class="card cp">
+    <div class="ch">
+      <div>
+        <div class="ct">Industry Annual Returns — All Sectors</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">Y-axis fixed −40% to +35% across all views. Hover any point for the exact figure.</div>
+      </div>
+      <div class="bg" id="ind-range-btns">
+        <button class="tb active" onclick="setIndRange(this,'all')">All Years</button>
+        <button class="tb" onclick="setIndRange(this,'recent')">2024–2026</button>
+        <button class="tb" onclick="setIndRange(this,'2022')">2022</button>
+        <button class="tb" onclick="setIndRange(this,'2023')">2023</button>
+      </div>
+    </div>
+
+    <!-- Sector toggle buttons -->
+    <div style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:8px">TOGGLE SECTORS — click to show/hide individual lines:</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="ind-toggles"></div>
+
+    <div style="position:relative;height:290px"><canvas id="masterIndChart"></canvas></div>
+
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-family:var(--mono);font-size:8px;color:var(--muted)">
+      <span>● Click legend buttons above to isolate any sector</span>
+      <span>● Y-axis: annual return % · fixed scale for all views</span>
+      <span>● Hover any data point for exact return value</span>
+    </div>
+  </div>
+
+  <!-- INDUSTRY SELECTOR -->
+  <div class="card cp">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div class="ct" style="margin-bottom:3px">Industry Deep Dive</div>
+        <div style="font-size:11px;color:var(--muted)">Choose one industry to explore its full breakdown — milestones, drivers, risk profile, and key stocks</div>
+      </div>
+      <select class="fsel" id="indJumpDrop" onchange="jumpIndustry(this.value)" style="min-width:230px;font-size:10px">
+        <option value="">— Choose an industry —</option>
+        <option value="Banking">Banking ▲ +18.4% YTD</option>
+        <option value="Industrial">Industrial ▲ +9.2% YTD</option>
+        <option value="Services">Services ▲ +8.4% YTD</option>
+        <option value="Holdings">Holdings ▲ +7.1% YTD</option>
+        <option value="Mining &amp; Oil">Mining &amp; Oil ▲ +4.2% YTD</option>
+        <option value="Property">Property ▼ −6.8% YTD</option>
+      </select>
+    </div>
+    <div style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:10px;margin-top:10px">CLICK ONE TO EXPLORE ↓</div>
+    <div class="itabs" id="ind-tabs"></div>
+
+    <!-- Deep dive content — metrics only, no extra chart -->
+    <div id="ind-dive" style="margin-top:14px"></div>
+  </div>
+</div>
+<!-- SECTOR COMPARISON -->
+<div class="page" id="page-compare">
+  <div class="sh"><span class="sh-t">Sector Comparison</span><div class="sh-l"></div><span class="sh-b">NORMALIZED TO 100</span></div>
+  <div class="page-ctx">
+    <span class="ctx-label">HOW TO READ</span>
+    <span class="ctx-text">All sectors start at <strong>100</strong> at the beginning of the selected period. The chart shows how each sector's value grew or shrank relative to that starting point. A line at 118 means that sector gained 18% from the starting date. <strong>Toggle sectors on/off</strong> using the colored buttons below. Use the 1Y/3Y/5Y buttons to change the time window.</span>
+  </div>
+  <div class="card cp">
+    <div class="ch"><span class="ct">Select Sectors to Compare</span></div>
+    <div class="comp-c" id="comp-c"></div>
+    <div class="bg" style="margin-bottom:12px">
+      <button class="tb active" onclick="setCompR(this,'1Y')">1Y</button>
+      <button class="tb" onclick="setCompR(this,'3Y')">3Y</button>
+      <button class="tb" onclick="setCompR(this,'5Y')">5Y</button>
+    </div>
+    <div class="cw" style="height:270px"><canvas id="compC"></canvas></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px" id="comp-sum"></div>
+</div>
+
+<!-- ANALYST CHAT -->
+<div class="page" id="page-analyst" style="padding:0;gap:0">
+  <div style="padding:14px 16px;border-bottom:1px solid var(--border);background:rgba(0,200,255,0.03)">
+    <div style="display:flex;align-items:flex-start;gap:10px">
+      <span style="font-family:var(--mono);font-size:8px;letter-spacing:1.5px;color:var(--accent2);white-space:nowrap;padding-top:2px">AI ANALYST</span>
+      <span style="font-size:12px;color:var(--muted2);line-height:1.6">Ask our AI analyst about <strong style="color:var(--text)">Philippine stock market historical trends</strong>. It can explain why specific sectors are rising or falling, compare stocks, describe macro correlations (BSP rates, OFW remittances, FX), and summarize what has happened in the PSE from 2020 to 2026. Use the quick prompts below or type your own question. <em style="color:var(--muted)">Note: Responses are based on historical data only and are not financial advice.</em></span>
+    </div>
+  </div>
+  <div class="chat-panel card" style="border-radius:0;border:none;border-top:1px solid var(--border)">
+    <div class="chat-hdr">
+      <div class="dot"></div>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--muted2)">PSE MARKET ANALYST — Historical Data Intelligence 2020–2026</span>
+      <span class="chat-tag" style="margin-left:auto">HISTORICAL ONLY</span>
+    </div>
+    <div class="qps">
+      <div class="qp" onclick="qSend(this.textContent)">Why is Banking rising?</div>
+      <div class="qp" onclick="qSend(this.textContent)">Best sector in 2025?</div>
+      <div class="qp" onclick="qSend(this.textContent)">PSEi trend since 2020?</div>
+      <div class="qp" onclick="qSend(this.textContent)">BPI vs BDO comparison</div>
+      <div class="qp" onclick="qSend(this.textContent)">Property sector risks?</div>
+      <div class="qp" onclick="qSend(this.textContent)">OFW impact on PSE?</div>
+      <div class="qp" onclick="qSend(this.textContent)">Industrial sector drivers?</div>
+    </div>
+    <div class="chat-msgs" id="chat-msgs">
+      <div class="msg sys">
+        <div class="msg-b">Hello. I'm the MarketMind PH analyst — I specialize in <strong>Philippine Stock Exchange historical data from 2020 to 2026</strong>. Ask me about sector trends, why industries are rising or falling, stock performance history, or macro correlations affecting the PSE. All analysis is based on historical data only.</div>
+        <div class="msg-meta">ANALYST · PSE Historical 2020–2026</div>
+      </div>
+    </div>
+    <div class="chat-inp-r">
+      <input class="chat-inp" id="cInp" placeholder="e.g. Why has the banking sector outperformed since 2024?" onkeydown="if(event.key==='Enter'){event.preventDefault();sendMsg()}">
+      <button class="chat-send" onclick="sendMsg()">SEND ↗</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- STOCK DETAIL OVERLAY -->
+<div class="ov-panel" id="ovPanel" onclick="if(event.target===this)closeOv()">
+  <div class="ov-box" id="ovBox"></div>
+</div>
+
+<!-- MOBILE BOTTOM NAV -->
+<div class="mob-nav">
+  <div class="mob-nav-items">
+    <div class="mob-ni active" onclick="go('overview',this);setMobActive(this)"><div class="mob-ni-icon">⊞</div>Overview</div>
+    <div class="mob-ni" onclick="go('heatmap',this);setMobActive(this)"><div class="mob-ni-icon">◫</div>Heatmap</div>
+    <div class="mob-ni" onclick="go('screener',this);setMobActive(this)"><div class="mob-ni-icon">≡</div>Screener</div>
+    <div class="mob-ni" onclick="go('rising',this);setMobActive(this)"><div class="mob-ni-icon">↑</div>Industries</div>
+    <div class="mob-ni" onclick="go('analyst',this);setMobActive(this)"><div class="mob-ni-icon">◉</div>Analyst</div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+const STOCKS=[
+  {sym:'SM',name:'SM Investments',sector:'Holdings',price:846,ytd:8.2,m1:2.1,pe:18.4,vol:'4.2M',signal:'RISING',cap:'large',h:[720,745,780,810,790,825,846]},
+  {sym:'BPI',name:'Bank of the Phil. Islands',sector:'Banking',price:136.5,ytd:18.7,m1:3.8,pe:12.1,vol:'8.1M',signal:'RISING',cap:'large',h:[98,108,115,122,119,131,136.5]},
+  {sym:'JFC',name:'Jollibee Foods Corp',sector:'Services',price:228,ytd:14.2,m1:2.5,pe:32.8,vol:'2.8M',signal:'RISING',cap:'large',h:[178,192,198,205,210,222,228]},
+  {sym:'ALI',name:'Ayala Land Inc',sector:'Property',price:26.5,ytd:-4.3,m1:-0.8,pe:22.1,vol:'18.4M',signal:'NEUTRAL',cap:'large',h:[31,30,28.5,27,26,26.8,26.5]},
+  {sym:'SMPH',name:'SM Prime Holdings',sector:'Property',price:29.9,ytd:-1.2,m1:0.4,pe:24.6,vol:'14.2M',signal:'NEUTRAL',cap:'large',h:[31.5,31,30.2,29.5,29,29.6,29.9]},
+  {sym:'AC',name:'Ayala Corporation',sector:'Holdings',price:604,ytd:5.1,m1:1.2,pe:15.8,vol:'0.9M',signal:'RISING',cap:'large',h:[548,562,570,585,578,596,604]},
+  {sym:'MER',name:'Manila Electric Co',sector:'Industrial',price:315,ytd:12.8,m1:3.1,pe:14.2,vol:'1.1M',signal:'RISING',cap:'large',h:[258,271,285,295,302,308,315]},
+  {sym:'TEL',name:'PLDT Inc',sector:'Services',price:1280,ytd:6.4,m1:1.8,pe:11.6,vol:'0.5M',signal:'RISING',cap:'large',h:[1142,1180,1210,1220,1250,1265,1280]},
+  {sym:'URC',name:'Universal Robina Corp',sector:'Industrial',price:124,ytd:-8.1,m1:-2.1,pe:19.8,vol:'3.6M',signal:'FALLING',cap:'large',h:[148,142,135,128,121,122,124]},
+  {sym:'GTCAP',name:'GT Capital Holdings',sector:'Holdings',price:590,ytd:7.3,m1:1.5,pe:13.4,vol:'0.4M',signal:'RISING',cap:'large',h:[528,542,558,565,572,582,590]},
+  {sym:'BDO',name:'BDO Unibank',sector:'Banking',price:148,ytd:22.3,m1:4.2,pe:10.8,vol:'5.6M',signal:'RISING',cap:'large',h:[102,112,121,131,138,143,148]},
+  {sym:'RLC',name:'Robinsons Land Corp',sector:'Property',price:19.2,ytd:-6.5,m1:-1.4,pe:20.3,vol:'6.8M',signal:'FALLING',cap:'large',h:[22.5,21.8,21,20.2,19.5,19,19.2]},
+  {sym:'GLO',name:'Globe Telecom',sector:'Services',price:1980,ytd:3.2,m1:0.6,pe:16.4,vol:'0.3M',signal:'NEUTRAL',cap:'large',h:[1850,1880,1910,1920,1950,1965,1980]},
+  {sym:'AEV',name:'Aboitiz Equity Ventures',sector:'Holdings',price:48.5,ytd:9.8,m1:2.2,pe:11.2,vol:'3.2M',signal:'RISING',cap:'large',h:[40.2,42.5,44,45.8,46.5,47.8,48.5]},
+  {sym:'SECB',name:'Security Bank Corp',sector:'Banking',price:89.5,ytd:16.4,m1:3.5,pe:9.8,vol:'2.1M',signal:'RISING',cap:'large',h:[68,72,76,80,83,87,89.5]},
+  {sym:'MBT',name:'Metropolitan Bank',sector:'Banking',price:62.8,ytd:19.1,m1:4.0,pe:9.2,vol:'9.4M',signal:'RISING',cap:'large',h:[44,48,52,56,58,61,62.8]},
+  {sym:'FPH',name:'First Philippine Holdings',sector:'Industrial',price:82.3,ytd:11.4,m1:2.8,pe:13.5,vol:'0.8M',signal:'RISING',cap:'large',h:[68,72,75,78,80,81.5,82.3]},
+  {sym:'DMC',name:'DMCI Holdings',sector:'Holdings',price:10.8,ytd:2.9,m1:0.4,pe:8.6,vol:'12.4M',signal:'NEUTRAL',cap:'large',h:[9.8,10,10.2,10.4,10.5,10.7,10.8]},
+  {sym:'PGOLD',name:'Puregold Price Club',sector:'Services',price:31.5,ytd:-3.8,m1:-0.9,pe:17.2,vol:'2.6M',signal:'NEUTRAL',cap:'large',h:[34.8,34,33.5,32.8,31.8,31.2,31.5]},
+  {sym:'AP',name:'Aboitiz Power Corp',sector:'Industrial',price:36.8,ytd:15.2,m1:3.4,pe:12.8,vol:'7.2M',signal:'RISING',cap:'large',h:[28.5,30.2,31.8,33.5,34.8,36,36.8]},
+  {sym:'AGI',name:'Alliance Global Group',sector:'Holdings',price:11.2,ytd:4.1,m1:0.8,pe:7.4,vol:'8.8M',signal:'NEUTRAL',cap:'large',h:[10,10.2,10.5,10.8,11,11.1,11.2]},
+  {sym:'ICT',name:'Intl Container Terminal',sector:'Industrial',price:318,ytd:21.5,m1:4.8,pe:16.2,vol:'0.6M',signal:'RISING',cap:'large',h:[228,248,265,282,296,308,318]},
+  {sym:'MEG',name:'Megaworld Corp',sector:'Property',price:2.08,ytd:-11.5,m1:-2.8,pe:5.6,vol:'89M',signal:'FALLING',cap:'mid',h:[2.65,2.5,2.4,2.3,2.18,2.1,2.08]},
+  {sym:'EMP',name:'Emperador Inc',sector:'Industrial',price:19.8,ytd:5.6,m1:1.2,pe:21.4,vol:'4.4M',signal:'NEUTRAL',cap:'mid',h:[17.8,18.2,18.8,19.2,19.4,19.6,19.8]},
+  {sym:'PSB',name:'Philippine Savings Bank',sector:'Banking',price:92.0,ytd:14.8,m1:3.2,pe:10.2,vol:'0.4M',signal:'RISING',cap:'mid',h:[70,75,80,84,87,90,92]},
+  {sym:'VITA',name:'Vitarich Corp',sector:'Industrial',price:4.2,ytd:-15.2,m1:-3.4,pe:28.4,vol:'14.2M',signal:'FALLING',cap:'mid',h:[5.8,5.5,5.1,4.8,4.5,4.3,4.2]},
+  {sym:'DNL',name:'D&L Industries',sector:'Industrial',price:7.8,ytd:-6.2,m1:-1.2,pe:14.6,vol:'5.6M',signal:'NEUTRAL',cap:'mid',h:[8.9,8.6,8.4,8.2,8.0,7.9,7.8]},
+  {sym:'RRHI',name:'Robinsons Retail Holdings',sector:'Services',price:52.4,ytd:1.8,m1:0.3,pe:18.2,vol:'1.2M',signal:'NEUTRAL',cap:'mid',h:[49.8,50.2,50.8,51.5,52,52.2,52.4]},
+  {sym:'FLI',name:'Filinvest Land Inc',sector:'Property',price:0.92,ytd:-18.2,m1:-4.1,pe:4.8,vol:'78M',signal:'FALLING',cap:'mid',h:[1.28,1.18,1.1,1.05,1.0,0.95,0.92]},
+  {sym:'COL',name:'COL Financial Group',sector:'Services',price:6.8,ytd:8.4,m1:1.9,pe:22.4,vol:'2.8M',signal:'RISING',cap:'mid',h:[5.8,6.0,6.2,6.4,6.5,6.7,6.8]},
+];
+
+const SCOL={Banking:'#00ffb4',Holdings:'#00c8ff',Property:'#ff4455',Industrial:'#ffd166',Services:'#a78bfa','Mining & Oil':'#ff6b35'};
+
+const IND={
+  Banking:{color:'#00ffb4',tagline:'Sustained NIM expansion + credit cycle recovery',ytd:18.4,
+    yp:[-12.4,22.1,5.6,14.8,18.4],yl:['2022','2023','2024','2025','2026 YTD'],
+    stats:{pe:'10.4x',div:'4.2%',beta:'0.88',cap:'₱1.84T'},
+    ms:[{yr:'Jan 2024',ev:'BSP rate-cut cycle begins — NIM compression fears fade'},
+      {yr:'Jun 2024',ev:'BDO reports record ₱49.2B net income; sector re-rates upward'},
+      {yr:'Dec 2024',ev:'Non-performing loans fall to 3.1% — a 10-year sector low'},
+      {yr:'Mar 2025',ev:'BPI-Robinsons Bank merger complete; CASA deposits surge 14%'},
+      {yr:'Q4 2025',ev:'Banking sub-index hits all-time high, led by MBT and BDO'}],
+    drv:[{n:'BSP Policy Rate Trajectory',v:92,c:'#00ffb4'},{n:'CASA Deposit Growth',v:78,c:'#00ffb4'},{n:'OFW Remittance Inflows',v:58,c:'#00c8ff'},{n:'Loan-to-Deposit Ratio',v:65,c:'#00c8ff'},{n:'Non-Performing Loan Ratio',v:42,c:'#ffd166'}],
+    risks:[{l:'Interest Rate Reversal',s:2},{l:'Credit Quality Deterioration',s:3},{l:'FX Exposure on Foreign Loans',s:3},{l:'Regulatory Capital Requirements',s:2}],
+    rev:[-3.2,18.2,8.4,21.6,24.8],stocks:['BDO','BPI','MBT','SECB','PSB'],},
+  Property:{color:'#ff4455',tagline:'Headwinds from elevated rates + OFW moderation',ytd:-6.8,
+    yp:[-24.2,8.8,-3.4,-6.8,-6.8],yl:['2022','2023','2024','2025','2026 YTD'],
+    stats:{pe:'15.8x',div:'2.1%',beta:'1.12',cap:'₱1.21T'},
+    ms:[{yr:'2022',ev:'Rate hikes begin — mortgage rates jump 340bps in 18 months'},
+      {yr:'2023',ev:'Mid-income residential demand slows; office vacancy rises to 18%'},
+      {yr:'2024',ev:'SMPH pivots to experiential retail, partially offsetting weakness'},
+      {yr:'2025',ev:'OFW remittances slow 3.2% YoY — critical buyer pool shrinks'},
+      {yr:'Q1 2026',ev:'ALI announces ₱60B capex cut; sector remains under sustained pressure'}],
+    drv:[{n:'Mortgage Rate Level',v:82,c:'#ff4455'},{n:'OFW Remittance Growth',v:65,c:'#ff6b35'},{n:'Office Vacancy Rate',v:55,c:'#ffd166'},{n:'BPO Demand for Office Space',v:48,c:'#00c8ff'},{n:'Residential Price Appreciation',v:38,c:'#00ffb4'}],
+    risks:[{l:'Sustained High Mortgage Rates',s:5},{l:'OFW Remittance Decline',s:4},{l:'Metro Office Oversupply',s:4},{l:'Mid-Income Demand Slowdown',s:3}],
+    rev:[-18.2,14.8,-2.1,-8.4,-6.2],stocks:['ALI','SMPH','MEG','RLC','FLI'],},
+  Holdings:{color:'#00c8ff',tagline:'Diversified conglomerates buffer sector-specific shocks',ytd:7.1,
+    yp:[-18.4,16.8,4.2,9.8,7.1],yl:['2022','2023','2024','2025','2026 YTD'],
+    stats:{pe:'13.2x',div:'2.8%',beta:'0.92',cap:'₱2.48T'},
+    ms:[{yr:'2022',ev:'Rate shock pressures property arms of SM, Ayala, and DMCI holdings'},
+      {yr:'2023',ev:'Conglomerates recover as consumer arms post strong EBITDA'},
+      {yr:'2024',ev:'AC digital ventures (UnionBank, Globe) contribute meaningful earnings'},
+      {yr:'2025',ev:'SM Retail surpasses pre-pandemic EBITDA; AEV power arm IPO-ready'},
+      {yr:'2026',ev:'Holdings index outperforms as diversification buffers sector risks'}],
+    drv:[{n:'Consumer Spending Recovery',v:74,c:'#00c8ff'},{n:'Retail Mall Foot Traffic',v:62,c:'#00c8ff'},{n:'Power Demand Growth',v:68,c:'#ffd166'},{n:'Digital Banking Adoption',v:58,c:'#00ffb4'},{n:'FX Impact on Import Costs',v:44,c:'#ff6b35'}],
+    risks:[{l:'Conglomerate Discount Widening',s:2},{l:'Subsidiary Underperformance',s:3},{l:'Macro Slowdown Risk',s:3},{l:'Governance Concerns',s:2}],
+    rev:[-8.4,22.1,8.2,14.4,10.8],stocks:['SM','AC','AEV','GTCAP','DMC'],},
+  Industrial:{color:'#ffd166',tagline:'Power and infrastructure lead; consumer goods lag',ytd:9.2,
+    yp:[-8.2,14.6,6.8,12.4,9.2],yl:['2022','2023','2024','2025','2026 YTD'],
+    stats:{pe:'15.1x',div:'2.4%',beta:'0.78',cap:'₱0.98T'},
+    ms:[{yr:'2023',ev:'Aboitiz Power renewable capacity doubles via Hedcor acquisition'},
+      {yr:'2024',ev:'ICT wins major Manila port concession — PH logistics boom begins'},
+      {yr:'2024',ev:'Meralco rate hikes approved by ERC; MER earnings surge 24%'},
+      {yr:'2025',ev:'Green energy targets drive AP and FPH capex into wind and solar'},
+      {yr:'2026',ev:'Industrial index re-rates as Marcos infrastructure spending accelerates'}],
+    drv:[{n:'Power Demand Growth (GDP-linked)',v:82,c:'#ffd166'},{n:'Infrastructure Spending (BBB+)',v:75,c:'#ffd166'},{n:'Trade Volume at PH Ports',v:68,c:'#00c8ff'},{n:'Renewable Energy Mandates',v:62,c:'#00ffb4'},{n:'Fuel & Input Cost Inflation',v:48,c:'#ff6b35'}],
+    risks:[{l:'Regulatory Rate Caps (ERC)',s:3},{l:'Project Execution Risk',s:3},{l:'Input Cost Inflation',s:4},{l:'Demand Slowdown',s:2}],
+    rev:[-2.8,18.2,10.4,16.8,12.2],stocks:['MER','AP','FPH','ICT','EMP'],},
+  Services:{color:'#a78bfa',tagline:'Telco stability + QSR expansion + digital acceleration',ytd:8.4,
+    yp:[-4.2,12.4,8.8,10.2,8.4],yl:['2022','2023','2024','2025','2026 YTD'],
+    stats:{pe:'18.4x',div:'3.1%',beta:'0.72',cap:'₱1.14T'},
+    ms:[{yr:'2021',ev:'JFC expands internationally — 3,800 stores outside Philippines'},
+      {yr:'2023',ev:'PLDT-Globe data revenues surpass voice for first time in history'},
+      {yr:'2024',ev:'5G rollout peaks; telco capex normalizes and FCF improves markedly'},
+      {yr:'2025',ev:'JFC achieves record ₱12.8B net income on international margin recovery'},
+      {yr:'2026',ev:'Services index lifted by tourism recovery — 6.2M arrivals YTD 2026'}],
+    drv:[{n:'Mobile Data Consumption Growth',v:86,c:'#a78bfa'},{n:'QSR Same-Store Sales Growth',v:72,c:'#a78bfa'},{n:'Tourism & Hospitality Recovery',v:65,c:'#00c8ff'},{n:'Digital Payment Adoption',v:61,c:'#00ffb4'},{n:'Consumer Confidence Index',v:54,c:'#ffd166'}],
+    risks:[{l:'Regulatory Headwinds (NTC)',s:2},{l:'Competition Intensification',s:3},{l:'Input Cost Pressure',s:3},{l:'Currency Risk for Intl Ops',s:2}],
+    rev:[-1.2,14.8,10.2,12.8,10.4],stocks:['JFC','TEL','GLO','PGOLD','COL'],},
+  'Mining & Oil':{color:'#ff6b35',tagline:'Nickel demand surge on global EV supply chain build-out',ytd:4.2,
+    yp:[-32.2,18.8,-6.4,12.4,4.2],yl:['2022','2023','2024','2025','2026 YTD'],
+    stats:{pe:'9.8x',div:'3.8%',beta:'1.42',cap:'₱0.62T'},
+    ms:[{yr:'2021',ev:'Nickel prices surge 28% on battery demand; PH mining stocks rally strongly'},
+      {yr:'2022',ev:'Global commodity selloff hits miners — sector falls 32% in 12 months'},
+      {yr:'2023',ev:'Indonesia nickel export ban boosts Philippine miners\' global pricing power'},
+      {yr:'2025',ev:'Global EV expansion drives renewed nickel and cobalt demand from PH'},
+      {yr:'2026',ev:'Sector stabilizes as government eases controversial open-pit mining ban'}],
+    drv:[{n:'Global Nickel Spot Prices',v:88,c:'#ff6b35'},{n:'EV Battery Supply Chain Demand',v:78,c:'#ff6b35'},{n:'Indonesia Export Policy',v:65,c:'#ffd166'},{n:'Domestic Mining Regulations',v:70,c:'#ff4455'},{n:'USD Strength vs PHP',v:55,c:'#00c8ff'}],
+    risks:[{l:'Commodity Price Volatility',s:5},{l:'Environmental Regulation Risk',s:5},{l:'Political & Permitting Risk',s:4},{l:'FX Exposure',s:3}],
+    rev:[-18.2,22.4,-4.8,14.2,6.8],stocks:['DMC','AGI','AEV','FPH','AC'],},
+};
+
+const CCOLS=['#00ffb4','#00c8ff','#ffd166','#ff6b35','#a78bfa','#ff4455'];
+const SLIST=['Banking','Holdings','Property','Industrial','Services','Mining & Oil'];
+
+const COMP_DATA={
+  Banking:{  '1Y':[100,104,108,112,108,115,118,121,119,124,121,118.4],'3Y':[100,88,98,108,102,118,122,128,124,130,126,118.4],'5Y':[100,112,88,98,108,118,122,128,124,130,126,118.4]},
+  Holdings:{  '1Y':[100,102,106,108,105,110,112,114,111,113,110,107.1],'3Y':[100,92,102,112,108,114,116,118,114,116,112,107.1],'5Y':[100,114,92,102,112,114,116,118,114,116,112,107.1]},
+  Property:{  '1Y':[100,98,96,94,97,95,92,90,93,91,94,93.2],'3Y':[100,112,88,98,94,96,92,88,90,88,92,93.2],'5Y':[100,112,88,98,94,96,92,88,90,88,92,93.2]},
+  Industrial:{'1Y':[100,103,107,110,107,113,116,118,115,118,116,109.2],'3Y':[100,95,108,118,112,116,120,124,118,122,118,109.2],'5Y':[100,110,95,108,118,116,120,124,118,122,118,109.2]},
+  Services:{  '1Y':[100,102,105,108,105,110,112,114,111,113,110,108.4],'3Y':[100,94,106,116,110,114,118,122,116,120,116,108.4],'5Y':[100,108,94,106,116,114,118,122,116,120,116,108.4]},
+  'Mining & Oil':{'1Y':[100,108,115,120,110,118,112,108,114,110,106,104.2],'3Y':[100,128,98,118,108,115,110,106,114,108,106,104.2],'5Y':[100,128,98,118,108,115,110,106,114,108,106,104.2]},
+};
+const M12=['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
+const M36=['Q2\'23','Q3\'23','Q4\'23','Q1\'24','Q2\'24','Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25','Q1\'26'];
+
+const PSEI_DATA={
+  '1Y':{l:['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'],d:[6380,6290,6450,6510,7108,6820,6580,6700,6740,6690,6780,6841]},
+  '3Y':{l:['Q2\'23','Q3\'23','Q4\'23','Q1\'24','Q2\'24','Q3\'24','Q4\'24','Q1\'25','Q2\'25','Q3\'25','Q4\'25','Q1\'26'],d:[6180,6420,6650,6500,6350,6800,6580,6760,6920,7108,6840,6841]},
+  '5Y':{l:['2021','H2\'21','2022','H2\'22','2023','H2\'23','2024','H2\'24','2025','H2\'25','Q4\'25','Q1\'26'],d:[7012,7240,6380,5848,6650,6420,6500,6800,6760,7108,6840,6841]},
+};
+
+const RESP=[
+  'Based on PSE historical data 2020–2026, the <strong>Banking sector (+18.4% YTD)</strong> is the top performer. Key drivers: (1) BSP\'s rate normalization cycle (started Jan 2024) expanded net interest margins 40–60bps; (2) Non-performing loans fell to a 10-year low of 3.1% by Q4 2024; (3) BDO and MBT posted record net incomes in 2025, re-rating the entire sector. The Banking sub-index is now 22% above its 2022 trough.',
+  'The <strong>PSEi 5-year journey (2021–2026)</strong>: Hit all-time high of 7,240 in Q3 2021 (post-COVID euphoria), then dropped to 5,848 in Q3 2022 as aggressive global rate hikes compressed valuations. Gradual recovery through 2023–2024, and a new multi-year high of 7,108 in August 2025 before settling at 6,841 in Q1 2026. The 5-year CAGR is approximately -0.6%, reflecting the 2022 correction overhang.',
+  '<strong>Property sector</strong> is the weakest performer in 2026 (-6.8% YTD). The historical story: (1) Mortgage rates rose 340bps during 2022–2023 hike cycle, compressing the mid-income buyer pool; (2) Metro Manila office vacancy reached 18% in 2023 due to BPO demand softening; (3) OFW remittances — a critical demand driver — slowed 3.2% YoY in Q4 2025. ALI has announced a ₱60B capex reduction, signaling continued caution.',
+  '<strong>BPI vs BDO historically</strong>: BDO has outperformed YTD (+22.3% vs BPI +18.7%). BDO\'s edge comes from its larger retail CASA franchise capturing low-cost deposits. BPI has stronger NIM (4.12% vs BDO\'s 3.8%) but lower loan growth momentum. BDO trades at 10.8x P/E vs BPI\'s 12.1x — the discount reflects BDO\'s larger non-performing loan exposure in 2022–2023, which has since normalized. Both carry RISING signals.',
+  '<strong>Industrial sector</strong> is rising +9.2% YTD, driven by power and port infrastructure names. Aboitiz Power (AP) is up +15.2% as renewable energy capacity expands. ICT is up +21.5% after winning the Manila port concession. Meralco (MER) benefits from ERC-approved rate adjustments. Power demand growth tracks GDP directly — with the economy growing 6.2% in 2025, electricity consumption rose proportionally, supporting earnings across the sector.',
+  '<strong>OFW remittances and PSE correlation</strong>: From 2020–2024, every 1% increase in OFW remittance growth correlated with approximately 1.8% outperformance in the Property and Consumer sub-indices. The 2025 slowdown (3.2% YoY decline) directly explains ALI, SMPH, and MEG underperformance in 2026. Banking has decoupled — it now benefits more from domestic credit growth and institutional deposits than OFW-driven savings flows.',
+  'The <strong>2025 best-performing sector was Banking (+14.8% for the full year)</strong>, followed by Industrial (+12.4%) and Services (+10.2%). Property was the laggard (-6.8% in 2025), weighed by the same structural headwinds. The PSEi overall returned approximately +5.4% for 2025, underperforming Banking by 9.4 percentage points — the widest sector divergence recorded since 2018.',
+];
+let rIdx=0;
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+function go(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el)el.classList.add('active');
+}
+
+// ═══════════════════════════════════════════
+// TICKER
+// ═══════════════════════════════════════════
+document.getElementById('ticker').innerHTML=[...STOCKS,...STOCKS].map(s=>`<div class="ti" onclick="openStock('${s.sym}')"><span class="ti-s">${s.sym}</span><span class="ti-p">₱${s.price.toLocaleString()}</span><span class="${s.ytd>=0?'up':'dn'}">${s.ytd>=0?'▲':'▼'}${Math.abs(s.ytd).toFixed(1)}%</span></div>`).join('');
+
+// ═══════════════════════════════════════════
+// SEARCH
+// ═══════════════════════════════════════════
+function doSearch(q){
+  const d=document.getElementById('sDrop');
+  if(!q){d.style.display='none';return;}
+  const r=STOCKS.filter(s=>s.sym.includes(q.toUpperCase())||s.name.toLowerCase().includes(q.toLowerCase())).slice(0,6);
+  if(!r.length){d.style.display='none';return;}
+  d.innerHTML=r.map(s=>`<div class="s-item" onclick="openStock('${s.sym}');document.getElementById('sBox').value='';document.getElementById('sDrop').style.display='none'"><span class="s-sym">${s.sym}</span><span class="s-name">${s.name}</span><span class="s-chg ${s.ytd>=0?'up':'dn'}">${s.ytd>=0?'+':''}${s.ytd.toFixed(1)}%</span></div>`).join('');
+  d.style.display='block';
+}
+
+// ═══════════════════════════════════════════
+// CHART HELPERS
+// ═══════════════════════════════════════════
+const CO=(extra={})=>({responsive:true,maintainAspectRatio:false,...extra,plugins:{legend:{display:false},...(extra.plugins||{})},layout:{padding:2}});
+const TT={backgroundColor:'#0c141a',borderColor:'rgba(0,255,180,0.18)',borderWidth:1,titleColor:'#e8f4f0',bodyColor:'#8fb0b5',titleFont:{family:'Space Mono',size:9},bodyFont:{family:'Space Mono',size:9}};
+const XSCALE={grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5a7a7e',font:{family:'Space Mono',size:8}}};
+const YSCALE={grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5a7a7e',font:{family:'Space Mono',size:8}}};
+
+// ═══════════════════════════════════════════
+// OVERVIEW
+// ═══════════════════════════════════════════
+let pseiChart;
+function initPSEI(){
+  const ctx=document.getElementById('pseiChart').getContext('2d');
+  const g=ctx.createLinearGradient(0,0,0,210);
+  g.addColorStop(0,'rgba(0,255,180,0.14)');g.addColorStop(1,'rgba(0,255,180,0)');
+  const d=PSEI_DATA['1Y'];
+  pseiChart=new Chart(ctx,{type:'line',data:{labels:d.l,datasets:[{data:d.d,borderColor:'#00ffb4',borderWidth:1.5,backgroundColor:g,fill:true,tension:0.4,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#00ffb4'}]},
+    options:{...CO(),scales:{x:XSCALE,y:{...YSCALE,ticks:{...YSCALE.ticks,callback:v=>v.toLocaleString()}}},plugins:{tooltip:{...TT,callbacks:{label:ctx=>' PSEi: '+ctx.parsed.y.toLocaleString()}}}}});
+}
+function setPSEI(btn,r){
+  document.querySelectorAll('#page-overview .tb').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const d=PSEI_DATA[r];
+  pseiChart.data.labels=d.l;pseiChart.data.datasets[0].data=d.d;pseiChart.update();
+}
+function initSecPie(){
+  const ctx=document.getElementById('secPie').getContext('2d');
+  new Chart(ctx,{type:'doughnut',data:{labels:['Banking','Holdings','Property','Industrial','Services','Mining & Oil'],datasets:[{data:[28,24,19,14,9,6],backgroundColor:['#00ffb4','#00c8ff','#ff4455','#ffd166','#a78bfa','#ff6b35'],borderColor:'#050a0e',borderWidth:2}]},
+    options:{...CO(),cutout:'62%',plugins:{legend:{display:true,position:'bottom',labels:{color:'#5a7a7e',font:{family:'Space Mono',size:8},boxWidth:7,padding:6}},tooltip:{...TT}}}});
+}
+function buildStockLists(){
+  ['g-gainers','g-losers','g-active'].forEach((id,i)=>{
+    const d=i===0?[...STOCKS].sort((a,b)=>b.ytd-a.ytd).slice(0,6):i===1?[...STOCKS].sort((a,b)=>a.ytd-b.ytd).slice(0,6):[...STOCKS].sort((a,b)=>parseFloat(b.vol)-parseFloat(a.vol)).slice(0,6);
+    document.getElementById(id).innerHTML=d.map(s=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openStock('${s.sym}')">
+      <span style="font-family:var(--mono);font-size:10px;font-weight:700;width:42px;color:var(--text)">${s.sym}</span>
+      <span style="font-size:10px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name.split(' ').slice(0,2).join(' ')}</span>
+      <span style="font-family:var(--mono);font-size:10px;${(i===2||s.ytd>=0)?'color:var(--green)':'color:var(--red)'}">${i===2?s.vol:(s.ytd>=0?'+':'')+s.ytd.toFixed(1)+'%'}</span>
+    </div>`).join('');
+  });
+}
+
+// ═══════════════════════════════════════════
+// HEATMAP
+// ═══════════════════════════════════════════
+const HM_FN={ytd:s=>s.ytd,'1m':s=>s.m1,'3m':s=>s.m1*2.8,'1y':s=>s.ytd*1.4};
+function buildHM(r='ytd'){
+  const fn=HM_FN[r];
+  const vals=STOCKS.map(s=>Math.abs(fn(s)));
+  const mx=Math.max(...vals);
+  document.getElementById('hm-grid').innerHTML=STOCKS.map(s=>{
+    const v=fn(s),i=Math.abs(v)/mx,col=v>=0?`rgba(0,255,180,${0.1+i*0.55})`:`rgba(255,68,85,${0.1+i*0.55})`,tc=v>=0?'#00ffb4':'#ff4455';
+    return `<div class="hm-c" style="background:${col}" onclick="openStock('${s.sym}')"><div class="hm-sy">${s.sym}</div><div class="hm-ch" style="color:${tc}">${v>=0?'+':''}${v.toFixed(1)}%</div><div class="hm-vo">${s.vol}</div></div>`;
+  }).join('');
+}
+function setHM(btn,r){document.querySelectorAll('#page-heatmap .tb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');buildHM(r);}
+function initSecBar(){
+  const ctx=document.getElementById('secBar').getContext('2d');
+  const secs=['Banking','Holdings','Property','Industrial','Services','Mining & Oil'];
+  const ytds=[18.4,7.1,-6.8,9.2,8.4,4.2];
+  new Chart(ctx,{type:'bar',data:{labels:secs,datasets:[{data:ytds,backgroundColor:secs.map(s=>(SCOL[s]||'#888')+'99'),borderColor:secs.map(s=>SCOL[s]||'#888'),borderWidth:1}]},
+    options:{...CO(),scales:{x:{...XSCALE,grid:{display:false}},y:{...YSCALE,ticks:{...YSCALE.ticks,callback:v=>v+'%'}}},plugins:{tooltip:{...TT,callbacks:{label:ctx=>' '+ctx.parsed.y.toFixed(1)+'% YTD'}}}}});
+}
+
+// ═══════════════════════════════════════════
+// SCREENER
+// ═══════════════════════════════════════════
+let scrData=[...STOCKS];let srtDir={};
+function spark(h){
+  const W=58,H=20,mn=Math.min(...h),mx=Math.max(...h),rng=mx-mn||1;
+  const pts=h.map((v,i)=>`${Math.round(i/(h.length-1)*(W-2)+1)},${Math.round((1-(v-mn)/rng)*(H-4)+2)}`).join(' ');
+  const c=h[h.length-1]>=h[0]?'#00ffb4':'#ff4455';
+  return `<svg width="${W}" height="${H}" style="display:block"><polyline points="${pts}" fill="none" stroke="${c}" stroke-width="1.2"/></svg>`;
+}
+function renderScr(data){
+  document.getElementById('scr-body').innerHTML=data.map(s=>`<tr onclick="openStock('${s.sym}')">
+    <td><strong style="color:var(--accent)">${s.sym}</strong></td>
+    <td style="color:var(--muted2);max-width:150px;overflow:hidden;text-overflow:ellipsis">${s.name}</td>
+    <td style="color:var(--muted)">${s.sector}</td>
+    <td>₱${s.price.toLocaleString()}</td>
+    <td style="${s.ytd>=0?'color:var(--green)':'color:var(--red)'}">${s.ytd>=0?'+':''}${s.ytd.toFixed(1)}%</td>
+    <td style="${s.m1>=0?'color:var(--green)':'color:var(--red)'}">${s.m1>=0?'+':''}${s.m1.toFixed(1)}%</td>
+    <td>${s.pe.toFixed(1)}x</td>
+    <td style="color:var(--muted)">${s.vol}</td>
+    <td><span class="tag tag-${s.signal==='RISING'?'r':s.signal==='FALLING'?'f':'n'}">${s.signal}</span></td>
+    <td>${spark(s.h)}</td>
+  </tr>`).join('');
+  document.getElementById('scr-count').textContent=`Showing ${data.length} of ${STOCKS.length} stocks · Click any row for details`;
+}
+function applyF(){
+  const sec=document.getElementById('f-sec').value,sig=document.getElementById('f-sig').value,srt=document.getElementById('f-srt').value,cap=document.getElementById('f-cap').value;
+  let d=STOCKS.filter(s=>(!sec||s.sector===sec)&&(!sig||s.signal===sig)&&(!cap||s.cap===cap));
+  d.sort((a,b)=>srt==='price'?b.price-a.price:srt==='pe'?a.pe-b.pe:srt==='vol'?parseFloat(b.vol)-parseFloat(a.vol):b.ytd-a.ytd);
+  scrData=d;renderScr(d);
+}
+function srt(col){
+  srtDir[col]=!srtDir[col];
+  scrData.sort((a,b)=>{const va=a[col],vb=b[col];return srtDir[col]?(va>vb?1:-1):(va<vb?1:-1);});
+  renderScr(scrData);
+}
+
+// ═══════════════════════════════════════════
+// RISING INDUSTRIES — MASTER CHART
+// ═══════════════════════════════════════════
+// All 6 sectors share the same year labels and fixed Y axis
+const IND_YEARS = ['2022','2023','2024','2025','2026 YTD'];
+// Each sector's yp is already 5 values aligned to IND_YEARS
+// visible[sector] = true/false for toggle
+const indVisible = {};
+Object.keys(IND).forEach(k => indVisible[k] = true);
+let masterChart = null;
+let indRangeMode = 'all'; // 'all', 'recent', '2022', '2023'
+
+function getIndRangeSlice() {
+  // returns {labels, sliceStart} for the current range
+  if (indRangeMode === '2022') return { labels: ['2022'], start: 0, end: 1 };
+  if (indRangeMode === '2023') return { labels: ['2023'], start: 1, end: 2 };
+  if (indRangeMode === 'recent') return { labels: ['2024','2025','2026 YTD'], start: 2, end: 5 };
+  return { labels: IND_YEARS, start: 0, end: 5 };
+}
+
+function buildMasterDatasets() {
+  const { start, end } = getIndRangeSlice();
+  return Object.entries(IND).map(([k, v]) => ({
+    label: k,
+    data: v.yp.slice(start, end),
+    borderColor: v.color,
+    backgroundColor: v.color + '22',
+    borderWidth: indVisible[k] ? 2 : 0,
+    pointRadius: indVisible[k] ? 4 : 0,
+    pointHoverRadius: indVisible[k] ? 6 : 0,
+    pointBackgroundColor: v.color,
+    tension: 0.35,
+    fill: false,
+    hidden: !indVisible[k],
+  }));
+}
+
+function initMasterIndChart() {
+  const ctx = document.getElementById('masterIndChart').getContext('2d');
+  const { labels } = getIndRangeSlice();
+  masterChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: buildMasterDatasets() },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: 4 },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#5a7a7e', font: { family: 'Space Mono', size: 9 } }
+        },
+        y: {
+          min: -40, max: 35,
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: {
+            color: '#5a7a7e',
+            font: { family: 'Space Mono', size: 9 },
+            callback: v => v + '%',
+            stepSize: 10
+          }
+        }
+      },
+      plugins: {
+        legend: { display: false }, // we use custom toggle buttons
+        tooltip: {
+          mode: 'index', intersect: false,
+          backgroundColor: '#0c141a',
+          borderColor: 'rgba(0,255,180,0.2)', borderWidth: 1,
+          titleColor: '#e8f4f0', bodyColor: '#8fb0b5',
+          titleFont: { family: 'Space Mono', size: 9 },
+          bodyFont: { family: 'Space Mono', size: 9 },
+          callbacks: {
+            title: ctx => 'Year: ' + ctx[0].label,
+            label: ctx => {
+              if (ctx.dataset.hidden) return null;
+              const v = ctx.parsed.y;
+              return ' ' + ctx.dataset.label + ': ' + (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
+            },
+            filter: item => !item.dataset.hidden
+          }
+        }
+      }
+    }
+  });
+  buildIndToggles();
+}
+
+function buildIndToggles() {
+  document.getElementById('ind-toggles').innerHTML = Object.entries(IND).map(([k, v]) => `
+    <button id="tgl-${k.replace(/[^a-z]/gi,'_')}"
+      onclick="toggleIndSector('${k}')"
+      style="font-family:var(--mono);font-size:9px;padding:5px 12px;border-radius:2px;cursor:pointer;transition:all .15s;letter-spacing:.3px;
+        border:1px solid ${v.color};
+        background:${indVisible[k] ? v.color + '22' : 'transparent'};
+        color:${indVisible[k] ? v.color : '#5a7a7e'}">
+      ${k} <span style="opacity:.7">${v.ytd >= 0 ? '▲+' : '▼'}${Math.abs(v.ytd)}%</span>
+    </button>`).join('');
+}
+
+function toggleIndSector(key) {
+  indVisible[key] = !indVisible[key];
+  // update chart dataset visibility
+  if (masterChart) {
+    masterChart.data.datasets = buildMasterDatasets();
+    masterChart.update();
+  }
+  // refresh toggle button appearance
+  const v = IND[key];
+  const btn = document.getElementById('tgl-' + key.replace(/[^a-z]/gi, '_'));
+  if (btn) {
+    btn.style.background = indVisible[key] ? v.color + '22' : 'transparent';
+    btn.style.color = indVisible[key] ? v.color : '#5a7a7e';
+  }
+}
+
+function setIndRange(btn, mode) {
+  document.querySelectorAll('#ind-range-btns .tb').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  indRangeMode = mode;
+  if (masterChart) {
+    const { labels } = getIndRangeSlice();
+    masterChart.data.labels = labels;
+    masterChart.data.datasets = buildMasterDatasets();
+    masterChart.update();
+  }
+}
+
+// ═══════════════════════════════════════════
+// RISING INDUSTRIES — DEEP DIVE (inline, no extra chart)
+// ═══════════════════════════════════════════
+let actInd = 'Banking';
+
+function buildIndTabs() {
+  document.getElementById('ind-tabs').innerHTML = Object.keys(IND).map(k => `
+    <button class="itab${k === actInd ? ' active' : ''}" onclick="selInd('${k.replace(/'/g,"\\'")}',this)">${k}</button>`).join('');
+}
+
+function selInd(key, el) {
+  actInd = key;
+  document.querySelectorAll('.itab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  // sync dropdown
+  const drop = document.getElementById('indJumpDrop');
+  if (drop) drop.value = '';
+  const ind = IND[key];
+
+  // Highlight this sector's line on the master chart
+  if (masterChart) {
+    masterChart.data.datasets = buildMasterDatasets();
+    // Make selected sector bolder, others dimmer
+    masterChart.data.datasets.forEach(ds => {
+      const isSelected = ds.label === key;
+      ds.borderWidth = isSelected ? 3 : (indVisible[ds.label] ? 1.5 : 0);
+      ds.pointRadius = isSelected ? 5 : (indVisible[ds.label] ? 2.5 : 0);
+      ds.borderColor = isSelected ? IND[ds.label].color : IND[ds.label].color + (indVisible[ds.label] ? '66' : '00');
+    });
+    masterChart.update();
+  }
+
+  const diveEl = document.getElementById('ind-dive');
+  diveEl.innerHTML = `
+    <div style="border-left:3px solid ${ind.color};padding-left:14px;margin-bottom:16px">
+      <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:${ind.color};margin-bottom:3px">${key}</div>
+      <div style="font-size:12px;color:var(--muted2)">${ind.tagline}</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px">
+      ${[
+        ['YTD Return', (ind.ytd >= 0 ? '+' : '') + ind.ytd + '%', ind.ytd >= 0 ? 'var(--green)' : 'var(--red)'],
+        ['Avg P/E', ind.stats.pe, 'var(--accent4)'],
+        ['Div Yield', ind.stats.div, 'var(--accent2)'],
+        ['Beta', ind.stats.beta, 'var(--accent4)'],
+        ['Market Cap', ind.stats.cap, 'var(--text)'],
+      ].map(([l, v, c]) => `<div class="is"><div class="is-l">${l}</div><div class="is-v" style="color:${c};font-size:12px">${v}</div></div>`).join('')}
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+      <div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase">Historical Milestones</div>
+        ${ind.ms.map(m => `<div class="ms-item"><span class="ms-yr" style="color:${ind.color}">${m.yr}</span><span class="ms-ev">${m.ev}</span></div>`).join('')}
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase">Macro Drivers</div>
+        ${ind.drv.map(d => `<div class="drv-item"><span class="drv-name">${d.n}</span><div class="drv-bw"><div class="drv-b" style="width:${d.v}%;background:${d.c}"></div></div><span class="drv-v" style="color:${d.c}">${d.v}%</span></div>`).join('')}
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase">Risk Profile</div>
+        ${ind.risks.map(r => {
+          const c = r.s >= 4 ? 'var(--red)' : r.s >= 3 ? 'var(--accent3)' : 'var(--accent)';
+          return `<div class="risk-row"><div class="risk-label"><span class="risk-name" style="font-size:10px">${r.l}</span><span class="risk-bars" style="color:${c};font-family:var(--mono);letter-spacing:-1px">${'█'.repeat(r.s) + '░'.repeat(5 - r.s)}</span></div></div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase">Key Stocks — ${key}</div>
+    <div style="overflow-x:auto">
+      <table class="scr-t" style="width:100%">
+        <thead><tr><th>Symbol</th><th>Company</th><th>Price</th><th>YTD%</th><th>1M%</th><th>P/E</th><th>Signal</th><th>6M Trend</th></tr></thead>
+        <tbody>${STOCKS.filter(s => ind.stocks.includes(s.sym)).map(s => `<tr onclick="openStock('${s.sym}')">
+          <td><strong style="color:var(--accent)">${s.sym}</strong></td>
+          <td style="color:var(--muted2)">${s.name}</td>
+          <td>₱${s.price.toLocaleString()}</td>
+          <td style="${s.ytd >= 0 ? 'color:var(--green)' : 'color:var(--red)'}">${s.ytd >= 0 ? '+' : ''}${s.ytd.toFixed(1)}%</td>
+          <td style="${s.m1 >= 0 ? 'color:var(--green)' : 'color:var(--red)'}">${s.m1 >= 0 ? '+' : ''}${s.m1.toFixed(1)}%</td>
+          <td style="color:var(--muted)">${s.pe.toFixed(1)}x</td>
+          <td><span class="tag tag-${s.signal === 'RISING' ? 'r' : s.signal === 'FALLING' ? 'f' : 'n'}">${s.signal}</span></td>
+          <td>${spark(s.h)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════
+// SECTOR COMPARISON
+// ═══════════════════════════════════════════
+let actSecs=new Set(['Banking','Industrial','Property']);let compChart;let compRange='1Y';
+function buildCompC(){
+  document.getElementById('comp-c').innerHTML=`<span style="font-family:var(--mono);font-size:9px;color:var(--muted)">SECTORS:</span>`+
+    SLIST.map((s,i)=>`<div class="cc${actSecs.has(s)?' on':''}" onclick="togSec('${s}',this,${i})" style="${actSecs.has(s)?'border-color:'+CCOLS[i]:''}">
+      <div class="cs" style="background:${CCOLS[i]}"></div>${s}</div>`).join('');
+}
+function togSec(s,el,i){
+  if(actSecs.has(s)){actSecs.delete(s);el.classList.remove('on');el.style.borderColor='';}
+  else{actSecs.add(s);el.classList.add('on');el.style.borderColor=CCOLS[i];}
+  updComp();updCompSum();
+}
+function buildCompDS(){
+  return [...actSecs].map(s=>{const i=SLIST.indexOf(s);return{label:s,data:COMP_DATA[s][compRange]||COMP_DATA[s]['1Y'],borderColor:CCOLS[i],backgroundColor:'transparent',borderWidth:1.5,tension:0.4,pointRadius:0,pointHoverRadius:4};});
+}
+function initComp(){
+  const ctx=document.getElementById('compC').getContext('2d');
+  const lbls=compRange==='1Y'?M12:M36;
+  compChart=new Chart(ctx,{type:'line',data:{labels:lbls,datasets:buildCompDS()},
+    options:{...CO(),scales:{x:XSCALE,y:{...YSCALE,ticks:{...YSCALE.ticks,callback:v=>v}}},
+    plugins:{legend:{display:true,labels:{color:'#5a7a7e',font:{family:'Space Mono',size:8},boxWidth:8,usePointStyle:true}},tooltip:{mode:'index',intersect:false,...TT}}}});
+  updCompSum();
+}
+function updComp(){if(!compChart)return;compChart.data.labels=compRange==='1Y'?M12:M36;compChart.data.datasets=buildCompDS();compChart.update();}
+function setCompR(btn,r){document.querySelectorAll('#page-compare .tb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');compRange=r;updComp();}
+function updCompSum(){
+  document.getElementById('comp-sum').innerHTML=[...actSecs].map(s=>{
+    const i=SLIST.indexOf(s),ytd=IND[s]?.ytd||0;
+    return `<div class="card cp"><div style="display:flex;align-items:center;gap:7px;margin-bottom:9px"><div style="width:7px;height:7px;border-radius:1px;background:${CCOLS[i]}"></div><span style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--text)">${s}</span></div>
+      <div style="font-family:var(--mono);font-size:18px;font-weight:700;${ytd>=0?'color:var(--green)':'color:var(--red)'};margin-bottom:3px">${ytd>=0?'+':''}${ytd}%</div>
+      <div style="font-size:10px;color:var(--muted)">YTD 2026</div>
+      <div class="prog-t"><div class="prog-f" style="width:${Math.min(Math.abs(ytd)*3,100)}%;background:${CCOLS[i]}"></div></div></div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// STOCK DETAIL
+// ═══════════════════════════════════════════
+function openStock(sym){
+  const s=STOCKS.find(x=>x.sym===sym);if(!s)return;
+  const cc=s.ytd>=0?'var(--green)':'var(--red)';
+  document.getElementById('ovBox').innerHTML=`
+    <button class="ov-close" onclick="closeOv()">✕ CLOSE</button>
+    <div style="font-family:var(--mono);font-size:26px;font-weight:700;color:var(--accent);margin-bottom:2px">${s.sym}</div>
+    <div style="font-size:13px;color:var(--muted2);margin-bottom:14px">${s.name} &nbsp;·&nbsp; <span style="color:${SCOL[s.sector]||'var(--accent2)'}">${s.sector}</span></div>
+    <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:14px">
+      <span style="font-family:var(--mono);font-size:30px;font-weight:700">₱${s.price.toLocaleString()}</span>
+      <span style="font-family:var(--mono);font-size:15px;color:${cc}">${s.ytd>=0?'+':''}${s.ytd.toFixed(1)}% YTD</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
+      ${[['1-Month Return',`${s.m1>=0?'+':''}${s.m1.toFixed(1)}%`,s.m1>=0?'var(--green)':'var(--red)'],['P/E Ratio',s.pe.toFixed(1)+'×','var(--accent4)'],['Avg Daily Volume',s.vol,'var(--muted2)'],['Signal',s.signal,s.signal==='RISING'?'var(--green)':s.signal==='FALLING'?'var(--red)':'var(--muted2)'],['Market Cap',s.cap==='large'?'Large Cap':'Mid Cap','var(--muted2)'],['Sector',s.sector,SCOL[s.sector]||'var(--accent2)']].map(([l,v,c])=>`
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:9px">
+        <div style="font-family:var(--mono);font-size:7px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">${l}</div>
+        <div style="font-family:var(--mono);font-size:12px;color:${c}">${v}</div>
+      </div>`).join('')}
+    </div>
+    <div style="font-family:var(--mono);font-size:8px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:7px">6-PERIOD PRICE HISTORY</div>
+    <div style="height:170px;position:relative"><canvas id="ovChart"></canvas></div>`;
+  document.getElementById('ovPanel').classList.add('open');
+  setTimeout(()=>{
+    const ctx=document.getElementById('ovChart').getContext('2d');
+    const col=s.ytd>=0?'#00ffb4':'#ff4455';
+    const g=ctx.createLinearGradient(0,0,0,170);g.addColorStop(0,col+'44');g.addColorStop(1,col+'00');
+    new Chart(ctx,{type:'line',data:{labels:['T-6','T-5','T-4','T-3','T-2','T-1','Now'],datasets:[{data:s.h,borderColor:col,borderWidth:2,backgroundColor:g,fill:true,tension:0.35,pointRadius:3,pointBackgroundColor:col}]},
+      options:{...CO(),scales:{x:XSCALE,y:{...YSCALE,ticks:{...YSCALE.ticks,callback:v=>'₱'+v.toLocaleString()}}},plugins:{tooltip:{...TT,callbacks:{label:ctx=>' ₱'+ctx.parsed.y.toLocaleString()}}}}});
+  },50);
+}
+function closeOv(){document.getElementById('ovPanel').classList.remove('open');}
+
+// ═══════════════════════════════════════════
+// ANALYST CHAT
+// ═══════════════════════════════════════════
+function sendMsg(){
+  const inp=document.getElementById('cInp');
+  const msg=inp.value.trim();if(!msg)return;
+  const msgs=document.getElementById('chat-msgs');
+  msgs.innerHTML+=`<div class="msg usr"><div class="msg-b">${msg}</div><div class="msg-meta">YOU</div></div>`;
+  inp.value='';msgs.scrollTop=msgs.scrollHeight;
+  const tid='t'+Date.now();
+  msgs.innerHTML+=`<div class="msg sys" id="${tid}"><div class="msg-b"><div class="think"><div class="td"></div><div class="td"></div><div class="td"></div></div></div></div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+  const resp=RESP[rIdx%RESP.length];rIdx++;
+  setTimeout(()=>{
+    document.getElementById(tid)?.remove();
+    msgs.innerHTML+=`<div class="msg sys"><div class="msg-b">${resp}</div><div class="msg-meta">ANALYST · Historical Data 2020–2026</div></div>`;
+    msgs.scrollTop=msgs.scrollHeight;
+  },1600+Math.random()*900);
+}
+function qSend(txt){
+  document.getElementById('cInp').value=txt;
+  go('analyst',document.querySelector('[onclick*=analyst]'));
+  setTimeout(sendMsg,80);
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+initPSEI();initSecPie();buildStockLists();
+buildHM();initSecBar();
+buildIndTabs();selInd('Banking',null);
+buildCompC();setTimeout(initComp,80);
+renderScr([...STOCKS].sort((a,b)=>b.ytd-a.ytd));
+setTimeout(initMasterIndChart,120);
+
+// ═══════════════════════════════════════════
+// SIDEBAR SECTOR FILTER
+// ═══════════════════════════════════════════
+function sideSecFilter(sec){
+  if(!sec){go('overview',document.querySelector('[onclick*=overview]'));return;}
+  go('rising',document.querySelector('[onclick*=rising]'));
+  setTimeout(()=>{
+    const el=[...document.querySelectorAll('.itab')].find(t=>t.textContent.trim()===sec||t.getAttribute('onclick')&&t.getAttribute('onclick').includes(sec));
+    selInd(sec,el);
+  },80);
+}
+
+function jumpIndustry(key){
+  if(!key)return;
+  const el=[...document.querySelectorAll('.itab')].find(t=>t.textContent.trim()===key||(t.getAttribute('onclick')&&t.getAttribute('onclick').includes(key)));
+  selInd(key,el);
+  setTimeout(()=>document.getElementById('indJumpDrop').value='',200);
+}
+
+// ═══════════════════════════════════════════
+// MOBILE NAV
+// ═══════════════════════════════════════════
+function setMobActive(el){
+  document.querySelectorAll('.mob-ni').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>

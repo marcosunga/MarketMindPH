@@ -14,14 +14,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 50% -5%,rgba(0,255,180,0.05) 0%,transparent 65%);pointer-events:none;z-index:0}
 body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);pointer-events:none;z-index:1}
 .app{position:relative;z-index:2;display:grid;grid-template-columns:240px 1fr;grid-template-rows:66px 1fr;height:100vh;overflow:hidden}
-.topbar{grid-column:1/-1;display:flex;align-items:center;padding:0 22px;gap:18px;border-bottom:1px solid var(--border);background:rgba(5,10,14,0.96);backdrop-filter:blur(12px);position:sticky;top:0;z-index:200}
-.logo{font-family:var(--mono);font-weight:700;font-size:17px;color:var(--accent);display:flex;align-items:center;gap:10px;flex-shrink:0;letter-spacing:-0.5px}
-.logo-mark{display:flex;align-items:center;justify-content:center;gap:0;flex-shrink:0}
-.logo-hex-outer{width:36px;height:36px;border:2px solid var(--accent);background:rgba(0,255,180,0.07);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;position:relative}
-.logo-hex-inner{width:14px;height:14px;background:var(--accent);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)}
-.logo-text{display:flex;flex-direction:column;gap:1px}
-.logo-name{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--accent);line-height:1;letter-spacing:-0.5px}
-.logo-tagline{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+.topbar{grid-column:1/-1;display:flex;align-items:center;padding:0 22px;gap:18px;border-bottom:1px solid var(--border);background:rgba(5,10,14,0.96);backdrop-filter:blur(12px);position:sticky;top:0;z-index:200;height:66px}
+.logo{display:flex;align-items:center;gap:10px;flex-shrink:0;text-decoration:none}
+.logo-mark{display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-hex-outer{width:34px;height:34px;border:2px solid var(--accent);background:rgba(0,255,180,0.08);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center}
+.logo-hex-inner{width:13px;height:13px;background:var(--accent);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)}
+.logo-text{display:flex;flex-direction:column;justify-content:center;gap:2px;line-height:1}
+.logo-name{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--accent);letter-spacing:-0.3px;line-height:1}
+.logo-tagline{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase;line-height:1}
 .search-wrap{flex:1;max-width:400px;margin:0 auto;position:relative}
 .search-box{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:8px 14px;font-family:var(--sans);font-size:13px;color:var(--text);outline:none;transition:border-color .15s}
 .search-box:focus{border-color:rgba(0,255,180,0.35)}
@@ -242,7 +242,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     </div>
   </div>
   <div class="search-wrap">
-    <input class="search-box" id="sBox" placeholder="Search stocks — SM, BPI, JFC…" oninput="doSearch(this.value)" onblur="setTimeout(()=>{document.getElementById('sDrop').style.display='none'},180)">
+    <input class="search-box" id="sBox" placeholder="Search stocks — SM, BPI, JFC…" oninput="doSearch(this.value)" onblur="setTimeout(()=>{document.getElementById('sDrop').style.display='none'},320)" onfocus="if(this.value)doSearch(this.value)">
     <div class="search-drop" id="sDrop"></div>
   </div>
   <div class="topbar-right">
@@ -827,8 +827,19 @@ function initPSEI(){
   const g=ctx.createLinearGradient(0,0,0,210);
   g.addColorStop(0,'rgba(0,255,180,0.14)');g.addColorStop(1,'rgba(0,255,180,0)');
   const d=PSEI_DATA['1Y'];
-  pseiChart=new Chart(ctx,{type:'line',data:{labels:d.l,datasets:[{data:d.d,borderColor:'#00ffb4',borderWidth:1.5,backgroundColor:g,fill:true,tension:0.4,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#00ffb4'}]},
-    options:{...CO(),scales:{x:XSCALE,y:{...YSCALE,ticks:{...YSCALE.ticks,callback:v=>v.toLocaleString()}}},plugins:{tooltip:{...TT,callbacks:{label:ctx=>' PSEi: '+ctx.parsed.y.toLocaleString()}}}}});
+  pseiChart=new Chart(ctx,{type:'line',data:{labels:d.l,datasets:[{label:'PSEi',data:d.d,borderColor:'#00ffb4',borderWidth:1.5,backgroundColor:g,fill:true,tension:0.4,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#00ffb4'}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,layout:{padding:2},
+      plugins:{
+        legend:{display:false},
+        tooltip:{...TT,callbacks:{label:ctx=>' PSEi: '+ctx.parsed.y.toLocaleString()}}
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5a7a7e',font:{family:'Space Mono',size:8}}},
+        y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5a7a7e',font:{family:'Space Mono',size:8},callback:v=>v.toLocaleString()}}
+      }
+    }
+  });
 }
 function setPSEI(btn,r){
   document.querySelectorAll('#page-overview .tb').forEach(b=>b.classList.remove('active'));

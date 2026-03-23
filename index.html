@@ -168,9 +168,9 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .info-icon{font-size:14px;flex-shrink:0;margin-top:1px}
 .info-text{font-size:12px;color:var(--muted2);line-height:1.7}
 .info-text strong{color:var(--text);font-weight:500}
-.page-ctx{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:4px;padding:12px 16px;display:flex;align-items:flex-start;gap:12px}
-.ctx-label{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--accent);white-space:nowrap;margin-top:1px;min-width:64px;text-transform:uppercase}
-.ctx-text{font-size:12px;color:var(--muted2);line-height:1.65}
+.page-ctx{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:4px;padding:14px 18px;display:flex;align-items:flex-start;gap:14px}
+.ctx-label{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--accent);white-space:nowrap;margin-top:2px;min-width:80px;flex-shrink:0;text-transform:uppercase}
+.ctx-text{font-size:13px;color:var(--muted2);line-height:1.65}
 .glos-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 .glos-item{background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:12px 14px}
 .glos-term{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.5px;margin-bottom:5px;text-transform:uppercase}
@@ -474,8 +474,18 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <span class="ctx-text">Filter stocks by <strong>Sector</strong>, <strong>Signal</strong> (Rising/Neutral/Falling), <strong>Market Cap</strong> size, and sort by any column. Click any column header to sort. Click any row to open a detailed stock view with price history. The <strong>6M Trend</strong> sparkline shows the direction of recent price movement at a glance.</span>
   </div>
   <div class="info-box warn">
-    <span class="info-icon" style="color:var(--accent4)">ℹ</span>
-    <span class="info-text"><strong>Column Guide:</strong> &nbsp;<span class="gl" data-tip="Year-to-Date % return since Jan 1, 2026">YTD%</span> — return since Jan 1, 2026 &nbsp;·&nbsp; <span class="gl" data-tip="1-Month % price change">1M%</span> — last 30-day return &nbsp;·&nbsp; <span class="gl" data-tip="Price-to-Earnings ratio: share price ÷ annual earnings per share. Lower = potentially cheaper.">P/E</span> — valuation ratio &nbsp;·&nbsp; <span class="gl" data-tip="Average daily shares traded. Higher volume = more liquid, easier to buy/sell.">Vol</span> — average daily trading volume &nbsp;·&nbsp; <strong>Signal</strong> — trend based on moving average crossover analysis</span>
+    <span class="info-icon" style="color:var(--accent4);font-size:16px">ℹ</span>
+    <div class="info-text">
+      <strong>Column Guide</strong><br>
+      <span style="display:flex;flex-wrap:wrap;gap:10px;margin-top:5px">
+        <span><span class="gl" data-tip="Year-to-Date % return since Jan 1, 2026">YTD%</span> — return since Jan 1, 2026</span>
+        <span><span class="gl" data-tip="1-Month % price change">1M%</span> — last 30-day return</span>
+        <span><span class="gl" data-tip="Price-to-Earnings: share price ÷ annual earnings. Lower = potentially cheaper.">P/E</span> — valuation ratio</span>
+        <span><span class="gl" data-tip="Average daily shares traded. Higher = more liquid.">Vol</span> — avg daily volume</span>
+        <span><strong>Signal</strong> — trend from moving average analysis</span>
+        <span><strong>6M Trend</strong> — sparkline of last 6 price periods</span>
+      </span>
+    </div>
   </div>
   <div class="card cp">
     <div class="scr-f">
@@ -860,8 +870,21 @@ function initSecBar(){
   const ctx=document.getElementById('secBar').getContext('2d');
   const secs=['Banking','Holdings','Property','Industrial','Services','Mining & Oil'];
   const ytds=[18.4,7.1,-6.8,9.2,8.4,4.2];
-  new Chart(ctx,{type:'bar',data:{labels:secs,datasets:[{data:ytds,backgroundColor:secs.map(s=>(SCOL[s]||'#888')+'99'),borderColor:secs.map(s=>SCOL[s]||'#888'),borderWidth:1}]},
-    options:{...CO(),scales:{x:{...XSCALE,grid:{display:false}},y:{...YSCALE,ticks:{...YSCALE.ticks,callback:v=>v+'%'}}},plugins:{tooltip:{...TT,callbacks:{label:ctx=>' '+ctx.parsed.y.toFixed(1)+'% YTD'}}}}});
+  new Chart(ctx,{type:'bar',
+    data:{labels:secs,datasets:[{label:'YTD Return',data:ytds,backgroundColor:secs.map(s=>(SCOL[s]||'#888')+'99'),borderColor:secs.map(s=>SCOL[s]||'#888'),borderWidth:1}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      layout:{padding:2},
+      plugins:{
+        legend:{display:false},
+        tooltip:{...TT,callbacks:{label:ctx=>' '+ctx.parsed.y.toFixed(1)+'% YTD'}}
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#8fb0b5',font:{family:'Space Mono',size:10}}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a7a7e',font:{family:'Space Mono',size:9},callback:v=>v+'%'}}
+      }
+    }
+  });
 }
 
 // ═══════════════════════════════════════════
@@ -1150,36 +1173,123 @@ function updCompSum(){
   }).join('');
 }
 
+function doSearch(q){
+  const d=document.getElementById('sDrop');
+  if(!q){d.style.display='none';return;}
+  const r=STOCKS.filter(s=>s.sym.includes(q.toUpperCase())||s.name.toLowerCase().includes(q.toLowerCase())).slice(0,7);
+  if(!r.length){
+    d.innerHTML=`<div style="padding:12px 16px;font-size:12px;color:var(--muted)">No results for "${q}"</div>`;
+    d.style.display='block';return;
+  }
+  d.innerHTML=r.map(s=>{
+    const cc=s.ytd>=0?'#00ffb4':'#ff4455';
+    const secColor=SCOL[s.sector]||'var(--accent2)';
+    const sigColor=s.signal==='RISING'?'#00ffb4':s.signal==='FALLING'?'#ff4455':'#8fb0b5';
+    const W=48,H=18,mn=Math.min(...s.h),mx=Math.max(...s.h),rng=mx-mn||1;
+    const pts=s.h.map((v,i)=>`${Math.round(i/(s.h.length-1)*(W-2)+1)},${Math.round((1-(v-mn)/rng)*(H-4)+2)}`).join(' ');
+    return `<div class="s-item" onclick="openStock('${s.sym}');document.getElementById('sBox').value='';document.getElementById('sDrop').style.display='none'" style="padding:10px 16px;gap:10px">
+      <div style="display:flex;flex-direction:column;gap:2px;min-width:44px">
+        <span class="s-sym" style="font-size:13px">${s.sym}</span>
+        <span style="font-family:var(--mono);font-size:9px;color:${secColor}">${s.sector}</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</div>
+        <div style="display:flex;gap:10px;margin-top:3px">
+          <span style="font-family:var(--mono);font-size:10px;color:var(--muted2)">₱${s.price.toLocaleString()}</span>
+          <span style="font-family:var(--mono);font-size:10px;color:${sigColor}">${s.signal}</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">P/E ${s.pe.toFixed(1)}x</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+        <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:${cc}">${s.ytd>=0?'+':''}${s.ytd.toFixed(1)}%</span>
+        <svg width="${W}" height="${H}"><polyline points="${pts}" fill="none" stroke="${cc}" stroke-width="1.5"/></svg>
+      </div>
+    </div>`;
+  }).join('');
+  d.style.display='block';
+}
+
 // ═══════════════════════════════════════════
 // STOCK DETAIL
 // ═══════════════════════════════════════════
 function openStock(sym){
   const s=STOCKS.find(x=>x.sym===sym);if(!s)return;
   const cc=s.ytd>=0?'var(--green)':'var(--red)';
+  const secColor=SCOL[s.sector]||'var(--accent2)';
+  const hist=s.h;
+  const trend=(hist[hist.length-1]-hist[hist.length-3])/2;
+  const proj=[hist[hist.length-1],+(hist[hist.length-1]+trend*0.8).toFixed(2),+(hist[hist.length-1]+trend*1.4).toFixed(2),+(hist[hist.length-1]+trend*1.9).toFixed(2)];
+  const projColor=trend>=0?'rgba(255,209,102,0.9)':'rgba(255,107,53,0.9)';
+  const divYield=s.sector==='Banking'?'4.2%':s.sector==='Mining & Oil'?'3.8%':s.sector==='Services'?'3.1%':'2.4%';
   document.getElementById('ovBox').innerHTML=`
     <button class="ov-close" onclick="closeOv()">✕ CLOSE</button>
-    <div style="font-family:var(--mono);font-size:26px;font-weight:700;color:var(--accent);margin-bottom:2px">${s.sym}</div>
-    <div style="font-size:13px;color:var(--muted2);margin-bottom:14px">${s.name} &nbsp;·&nbsp; <span style="color:${SCOL[s.sector]||'var(--accent2)'}">${s.sector}</span></div>
-    <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:14px">
-      <span style="font-family:var(--mono);font-size:30px;font-weight:700">₱${s.price.toLocaleString()}</span>
-      <span style="font-family:var(--mono);font-size:15px;color:${cc}">${s.ytd>=0?'+':''}${s.ytd.toFixed(1)}% YTD</span>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+      <div>
+        <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--accent);line-height:1;margin-bottom:4px">${s.sym}</div>
+        <div style="font-size:14px;color:var(--muted2);margin-bottom:8px">${s.name}</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:2px;background:${secColor}22;color:${secColor};border:1px solid ${secColor}44">${s.sector}</span>
+          <span style="font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:2px;background:${s.signal==='RISING'?'rgba(0,255,180,0.1)':s.signal==='FALLING'?'rgba(255,68,85,0.1)':'rgba(255,255,255,0.05)'};color:${s.signal==='RISING'?'var(--green)':s.signal==='FALLING'?'var(--red)':'var(--muted2)'};border:1px solid ${s.signal==='RISING'?'rgba(0,255,180,0.25)':s.signal==='FALLING'?'rgba(255,68,85,0.25)':'var(--border)'}">● ${s.signal}</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${s.cap==='large'?'Large Cap':'Mid Cap'}</span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:var(--mono);font-size:32px;font-weight:700;line-height:1;margin-bottom:4px">₱${s.price.toLocaleString()}</div>
+        <div style="font-family:var(--mono);font-size:15px;color:${cc}">${s.ytd>=0?'+':''}${s.ytd.toFixed(1)}% YTD</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:2px">${s.m1>=0?'+':''}${s.m1.toFixed(1)}% this month</div>
+      </div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
-      ${[['1-Month Return',`${s.m1>=0?'+':''}${s.m1.toFixed(1)}%`,s.m1>=0?'var(--green)':'var(--red)'],['P/E Ratio',s.pe.toFixed(1)+'×','var(--accent4)'],['Avg Daily Volume',s.vol,'var(--muted2)'],['Signal',s.signal,s.signal==='RISING'?'var(--green)':s.signal==='FALLING'?'var(--red)':'var(--muted2)'],['Market Cap',s.cap==='large'?'Large Cap':'Mid Cap','var(--muted2)'],['Sector',s.sector,SCOL[s.sector]||'var(--accent2)']].map(([l,v,c])=>`
-      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:9px">
-        <div style="font-family:var(--mono);font-size:7px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">${l}</div>
-        <div style="font-family:var(--mono);font-size:12px;color:${c}">${v}</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px">
+      ${[['P/E Ratio',s.pe.toFixed(1)+'×','var(--accent4)','Share price ÷ annual earnings'],['Avg Daily Vol',s.vol,'var(--muted2)','Shares traded per day'],['Dividend Yield',divYield,'var(--accent2)','Annual dividend as % of price']].map(([l,v,c,tip])=>`
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:11px 13px">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:5px">${l}</div>
+        <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:${c};margin-bottom:3px">${v}</div>
+        <div style="font-size:10px;color:var(--muted)">${tip}</div>
       </div>`).join('')}
     </div>
-    <div style="font-family:var(--mono);font-size:8px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:7px">6-PERIOD PRICE HISTORY</div>
-    <div style="height:170px;position:relative"><canvas id="ovChart"></canvas></div>`;
+    <div style="font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">
+      6-Period History + 3-Period Trend Projection
+      <span style="margin-left:10px;font-size:9px;color:var(--muted);font-family:var(--sans);text-transform:none;letter-spacing:0;opacity:.7">Projection is a linear trend estimate — not financial advice.</span>
+    </div>
+    <div style="display:flex;gap:14px;margin-bottom:8px;flex-wrap:wrap">
+      <span style="display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;color:var(--muted2)"><span style="width:20px;height:2px;background:${s.ytd>=0?'#00ffb4':'#ff4455'};display:inline-block"></span>Historical price</span>
+      <span style="display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;color:var(--muted2)"><span style="width:20px;height:2px;background:${projColor};display:inline-block;border-top:2px dashed ${projColor};height:0"></span>Projection (linear trend)</span>
+    </div>
+    <div style="height:200px;position:relative;margin-bottom:16px"><canvas id="ovChart"></canvas></div>
+    <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:4px;padding:12px 14px">
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Trend Summary</div>
+      <div style="font-size:13px;color:var(--muted2);line-height:1.7">
+        ${s.sym} is <strong style="color:${s.signal==='RISING'?'var(--green)':s.signal==='FALLING'?'var(--red)':'var(--muted2)'}">${s.signal.toLowerCase()}</strong> with a YTD return of <strong style="color:${cc}">${s.ytd>=0?'+':''}${s.ytd.toFixed(1)}%</strong> and trades at ₱${s.price.toLocaleString()} (P/E ${s.pe.toFixed(1)}×).
+        ${trend>=0?`The 6-period price trend is <strong style="color:var(--green)">upward</strong>, with the linear projection pointing toward ₱${proj[3].toLocaleString()}.`:`The 6-period price trend is <strong style="color:var(--red)">downward</strong>, with the linear projection pointing toward ₱${proj[3].toLocaleString()}.`}
+        Sector: <span style="color:${secColor}">${s.sector}</span>.
+      </div>
+    </div>`;
   document.getElementById('ovPanel').classList.add('open');
   setTimeout(()=>{
     const ctx=document.getElementById('ovChart').getContext('2d');
     const col=s.ytd>=0?'#00ffb4':'#ff4455';
-    const g=ctx.createLinearGradient(0,0,0,170);g.addColorStop(0,col+'44');g.addColorStop(1,col+'00');
-    new Chart(ctx,{type:'line',data:{labels:['T-6','T-5','T-4','T-3','T-2','T-1','Now'],datasets:[{data:s.h,borderColor:col,borderWidth:2,backgroundColor:g,fill:true,tension:0.35,pointRadius:3,pointBackgroundColor:col}]},
-      options:{...CO(),scales:{x:XSCALE,y:{...YSCALE,ticks:{...YSCALE.ticks,callback:v=>'₱'+v.toLocaleString()}}},plugins:{tooltip:{...TT,callbacks:{label:ctx=>' ₱'+ctx.parsed.y.toLocaleString()}}}}});
+    const allLabels=['T-6','T-5','T-4','T-3','T-2','T-1','Now','P+1','P+2','P+3'];
+    const histData=[...s.h,null,null,null];
+    const projData=[null,null,null,null,null,null,...proj];
+    const g=ctx.createLinearGradient(0,0,0,200);g.addColorStop(0,col+'33');g.addColorStop(1,col+'00');
+    new Chart(ctx,{
+      type:'line',
+      data:{labels:allLabels,datasets:[
+        {label:'Historical',data:histData,borderColor:col,borderWidth:2.5,backgroundColor:g,fill:true,tension:0.35,pointRadius:3,pointBackgroundColor:col,spanGaps:false},
+        {label:'Projection',data:projData,borderColor:projColor,borderWidth:2,borderDash:[6,4],backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:3,pointBackgroundColor:projColor,spanGaps:false},
+      ]},
+      options:{
+        responsive:true,maintainAspectRatio:false,layout:{padding:4},
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8fb0b5',font:{family:'Space Mono',size:10}}},
+          y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a7a7e',font:{family:'Space Mono',size:10},callback:v=>'₱'+v.toLocaleString()}}
+        },
+        plugins:{
+          legend:{display:true,labels:{color:'#8fb0b5',font:{family:'Space Mono',size:10},boxWidth:14,padding:16}},
+          tooltip:{...TT,callbacks:{title:ctx=>ctx[0].label,label:ctx=>ctx.dataset.label+': ₱'+(ctx.parsed.y||0).toLocaleString()}}
+        }
+      }
+    });
   },50);
 }
 function closeOv(){document.getElementById('ovPanel').classList.remove('open');}
